@@ -1,0 +1,10 @@
+{
+  "name": "@openirl/stats-bridge",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Normalizes MediaMTX, transport, OBS, and NOALBS telemetry into a shared health model.",
+  "license": "MIT",
+  "scripts": {
+    "check": "node -e \"console.log('No implementation checks yet')\""
+  }
+}

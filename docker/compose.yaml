@@ -1,0 +1,16 @@
+name: openirl
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    restart: unless-stopped
+    ports:
+      - "1935:1935"
+      - "8890:8890/udp"
+      - "9997:9997"
+      - "9998:9998"
+    volumes:
+      - ../integrations/mediamtx/mediamtx.yml:/mediamtx.yml:ro
+
+# Application services will be added here as each package becomes runnable.
+# Pin image versions before the first production release.

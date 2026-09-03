@@ -1,0 +1,16 @@
+# Development baseline only. Harden authentication and pin the image before production.
+api: yes
+apiAddress: :9997
+metrics: yes
+metricsAddress: :9998
+
+rtmp: yes
+rtmpAddress: :1935
+
+srt: yes
+srtAddress: :8890
+
+paths:
+  live/feed-1:
+  live/feed-2:
+  live/feed-3:

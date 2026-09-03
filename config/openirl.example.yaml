@@ -1,0 +1,55 @@
+version: 1
+
+server:
+  apiPort: 3001
+  dashboardPort: 3000
+  logLevel: info
+
+ingest:
+  maxConcurrentFeeds: 3
+  allowedProtocols:
+    - srtla
+    - srt
+    - rtmp
+    - rtmps
+  feeds:
+    - id: feed-1
+      mediaPath: live/feed-1
+      enabled: true
+    - id: feed-2
+      mediaPath: live/feed-2
+      enabled: true
+    - id: feed-3
+      mediaPath: live/feed-3
+      enabled: true
+
+media:
+  provider: mediamtx
+  apiUrl: ${MEDIAMTX_API_URL}
+  metricsUrl: ${MEDIAMTX_METRICS_URL}
+
+switching:
+  provider: noalbs
+  scenes:
+    live: Live
+    degraded: Low Bitrate
+    offline: Offline
+    brb: BRB
+  thresholds:
+    degradedAfterSeconds: 5
+    offlineAfterSeconds: 15
+    recoveryStableSeconds: 10
+
+obs:
+  websocketUrl: ${OBS_WEBSOCKET_URL}
+
+clips:
+  directory: ./clips
+  allowedExtensions:
+    - .mp4
+    - .mov
+    - .mkv
+
+monitoring:
+  pollIntervalSeconds: 2
+  healthPort: 9090

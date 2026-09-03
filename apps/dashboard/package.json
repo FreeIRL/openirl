@@ -1,0 +1,10 @@
+{
+  "name": "@openirl/dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shows feed health, program state, alerts, and safe mobile controls.",
+  "license": "MIT",
+  "scripts": {
+    "check": "node -e \"console.log('No implementation checks yet')\""
+  }
+}
