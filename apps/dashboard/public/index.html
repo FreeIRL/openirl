@@ -1,50 +1,16 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#111315"><title>OpenIRL Control</title><link rel="stylesheet" href="/styles.css">
-</head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#30363b"><title>OpenIRL Dashboard</title><link rel="stylesheet" href="/styles.css"></head>
 <body>
-  <a class="skip" href="#main">Skip to controls</a>
-  <aside class="sidebar" aria-label="Primary navigation">
-    <div class="brand"><span class="brand-mark">O</span><strong>OPENIRL</strong></div>
-    <nav><a class="active" href="#control">Control</a><a href="#feeds">Feeds</a><a href="#system">System</a><a href="#events">Events</a></nav>
-    <div class="sidebar-foot"><span class="dot unknown"></span><span>Control API<br><small>Not connected</small></span></div>
-  </aside>
-  <header class="topbar">
-    <div class="mobile-brand"><span class="brand-mark">O</span><strong>OPENIRL</strong></div>
-    <div class="top-stat"><small>PROGRAM</small><strong id="program-state">STATUS UNKNOWN</strong></div>
-    <div class="top-stat"><small>OBS SCENE</small><strong id="top-scene">Not connected</strong></div>
-    <div class="top-stat bitrate-top"><small>FEED 1</small><strong id="top-bitrate">0 kbps</strong></div>
-    <button class="danger" id="end-stream" disabled title="Requires authenticated OBS control">END STREAM</button>
-  </header>
-  <main id="main">
-    <section class="hero-grid" id="control">
-      <article class="panel preview-panel">
-        <div class="panel-head"><div><span class="eyebrow">PROGRAM</span><h1>Output preview</h1></div><span class="badge neutral">Preview unavailable</span></div>
-        <div class="preview"><div class="preview-empty"><span class="preview-icon">▶</span><strong>No preview source</strong><small>Program preview awaits the OBS backend</small></div><div class="safe-area"></div></div>
-      </article>
-      <article class="panel feed-card" id="feeds">
-        <div class="panel-head"><div><span class="eyebrow">CONTRIBUTION</span><h2>Feed 1</h2></div><span class="badge neutral" id="feed-badge">Checking…</span></div>
-        <div class="big-number" id="bitrate">—<small>kbps</small></div><div class="meter"><i id="bitrate-meter"></i></div>
-        <dl class="feed-details"><div><dt>Source</dt><dd>SRTLA → MediaMTX</dd></div><div><dt>Last update</dt><dd id="last-update">Waiting</dd></div></dl>
-        <div class="link-placeholder"><div><strong>Network links</strong><span class="badge neutral">Not available</span></div><p>Wi-Fi and cellular telemetry is not yet emitted by the SRTLA receiver. Total feed bitrate above is live.</p></div>
-      </article>
-    </section>
-
-    <section class="panel controls" aria-labelledby="controls-title">
-      <div class="panel-head"><div><span class="eyebrow">QUICK CONTROL</span><h2 id="controls-title">Switch scene</h2></div><span class="lock">🔒 Authentication required</span></div>
-      <div class="control-grid"><button disabled><span class="control-icon live">●</span><strong>LIVE</strong><small>Normal program</small></button><button disabled class="desktop-low"><span class="control-icon low">◒</span><strong>LOW BITRATE</strong><small>Connection fallback</small></button><button disabled><span class="control-icon brb">Ⅱ</span><strong>BRB</strong><small>Hold screen</small></button><button disabled><span class="control-icon privacy">◆</span><strong>PRIVACY</strong><small>Hide program</small></button></div>
-      <p class="control-note" id="control-note">Controls are intentionally disabled until the authenticated OBS control API exists.</p>
-    </section>
-
-    <section class="panel system" id="system" aria-labelledby="system-title"><div class="panel-head"><div><span class="eyebrow">INFRASTRUCTURE</span><h2 id="system-title">System health</h2></div><span class="updated" id="updated">Checking…</span></div><div class="service-grid" id="services"></div></section>
-    <section class="lower-grid">
-      <article class="panel history"><div class="panel-head"><div><span class="eyebrow">LAST 60 SECONDS</span><h2>Feed history</h2></div><div class="legend"><span class="dot healthy"></span>Bitrate <span class="rtt-label">RTT unavailable</span></div></div><canvas id="chart" height="190" aria-label="Feed 1 bitrate history chart"></canvas><p class="chart-summary" id="chart-summary" aria-live="polite">Waiting for samples.</p></article>
-      <article class="panel events" id="events"><div class="panel-head"><div><span class="eyebrow">ACTIVITY</span><h2>Recent events</h2></div></div><ol id="event-list"><li><time>Now</time><div><strong>Dashboard started</strong><p>Waiting for live telemetry.</p></div></li></ol></article>
-    </section>
-  </main>
-  <nav class="bottom-nav" aria-label="Mobile navigation"><a class="active" href="#control"><span>⌂</span>Control</a><a href="#feeds"><span>⌁</span>Feeds</a><a href="#events"><span>▣</span>Clips</a><a href="#system"><span>•••</span>More</a></nav>
-  <dialog id="confirm"><h2>End stream?</h2><p>This emergency action will stop the broadcast. It requires authenticated OBS control and is not available yet.</p><form method="dialog"><button value="cancel">Cancel</button><button class="danger" value="confirm" disabled>End stream</button></form></dialog>
-  <script src="/app.js" type="module"></script>
+<a class="skip" href="#main">Skip to controls</a>
+<header class="site-header"><a class="brand" href="#main" aria-label="OpenIRL dashboard"><span class="brand-mark">O</span><strong>OPENIRL</strong></a><nav class="desktop-nav" aria-label="Primary navigation"><a class="active" href="#main">Dashboard</a><a href="#ingests">Ingests</a><a href="#scene">Scenes</a><a href="#system">System</a></nav><div class="header-copy">Broadcast control <span>•</span> local access</div><button class="menu" type="button" aria-label="Navigation unavailable" disabled><span></span><span></span><span></span></button></header>
+<main id="main"><h1 class="sr-only">OpenIRL broadcast control dashboard</h1>
+<section class="top-grid" aria-label="Broadcast controls">
+<details class="card stream-card" open><summary><span>Stream <span class="badge neutral" id="stream-badge">Unavailable</span></span></summary><div class="card-body stack-actions"><button class="action start" type="button" disabled title="Requires authenticated OBS control"><span aria-hidden="true">●</span> Start</button><button class="action stop" type="button" disabled title="Requires authenticated OBS control"><span aria-hidden="true">■</span> Stop</button><p class="unavailable" id="control-note">Controls are unavailable until authenticated OBS control is configured.</p></div></details>
+<details class="card ingest-card" id="ingests" open><summary>Ingests</summary><div class="card-body"><div class="ingest-title"><span><span class="source-icon" aria-hidden="true">⌁</span> Main Ingest <small>Feed 1</small></span><span class="badge neutral" id="feed-badge">Checking…</span></div><div class="bitrate-line"><strong id="bitrate">—</strong><span>kbps</span><small id="last-update">Waiting for telemetry</small></div><div class="ingest-actions" aria-label="Main ingest controls"><button type="button" disabled title="Ingest controls are not implemented">Mute</button><button type="button" disabled title="Ingest controls are not implemented">Unmute</button><button class="fix" type="button" disabled title="Ingest controls are not implemented">Fix</button></div><p class="unavailable">Per-link SRTLA telemetry and ingest controls are not available. Total bitrate is live.</p></div></details>
+<details class="card scene-card" id="scene" open><summary><span>Scene <span class="badge neutral" id="scene-badge">Unavailable</span></span></summary><div class="card-body scene-actions"><button type="button" disabled><span aria-hidden="true">▣</span> Ingest / Live</button><button type="button" disabled><span aria-hidden="true">◩</span> Low-bitrate</button><button type="button" disabled><span aria-hidden="true">◇</span> Offline / BRB</button><p class="unavailable">Scene switching requires authenticated OBS control.</p></div></details>
+</section>
+<section class="media-grid"><details class="card preview-card" open><summary><span>Ingest Preview <small>live when available</small></span></summary><div class="preview" id="preview"><div class="preview-empty"><span aria-hidden="true">▱</span><strong>Preview unavailable</strong><small>No safe preview source is exposed by the backend.</small></div></div></details><details class="card chart-card" open><summary><span>Bitrate <small>past 60 sec</small></span></summary><div class="chart-wrap"><canvas id="chart" height="280" aria-label="Feed 1 bitrate over the past 60 seconds"></canvas><div class="chart-current"><span class="dot" id="chart-dot"></span><strong id="chart-bitrate">0 kbps</strong></div></div><p class="sr-only" id="chart-summary" aria-live="polite">Waiting for samples.</p></details></section>
+<details class="card system-card" id="system"><summary><span>System status <small id="updated">Checking…</small></span></summary><div class="service-grid" id="services"></div></details>
+</main>
+<footer class="status-bar" aria-label="Current broadcast status"><span class="status-pill offline" id="bottom-stream">Stream unavailable</span><span class="status-pill neutral" id="bottom-ingest">Main Ingest checking</span><span class="footer-bitrate"><span>Bitrate</span> <strong id="bottom-bitrate">0 kbps</strong></span></footer><script src="/app.js" type="module"></script>
 </body></html>

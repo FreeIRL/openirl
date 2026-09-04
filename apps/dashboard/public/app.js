@@ -1,35 +1,5 @@
-const $ = (selector) => document.querySelector(selector);
-const services = [ ["obs","OBS"], ["noalbs","NOALBS"], ["srtla","SRTLA"], ["mediaMtx","MediaMTX"], ["statsBridge","Stats bridge"] ];
-const samples = [];
-const events = [];
-let previousConnected;
-
-function formatBitrate(value) { return `${Math.max(0, Math.round(Number(value) || 0)).toLocaleString()} kbps`; }
-function age(timestamp) { if (!timestamp) return "No sample"; const seconds=Math.max(0,Math.round((Date.now()-timestamp)/1000)); return seconds<2?"Just now":`${seconds}s ago`; }
-function serviceLabel(state) { return state === "healthy" ? "Healthy" : state === "degraded" ? "Degraded" : state === "offline" ? "Offline" : "Not connected"; }
-function addEvent(title, detail) { events.unshift({ at:new Date(), title, detail }); events.splice(4); $("#event-list").innerHTML=events.map((event)=>`<li><time>${event.at.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</time><div><strong>${event.title}</strong><p>${event.detail}</p></div></li>`).join(""); }
-
-function drawChart() {
-  const canvas=$("#chart"), rect=canvas.getBoundingClientRect(), ratio=window.devicePixelRatio||1;
-  canvas.width=rect.width*ratio; canvas.height=190*ratio;
-  const ctx=canvas.getContext("2d"); ctx.scale(ratio,ratio); const w=rect.width,h=190,p=14;
-  ctx.strokeStyle="#2b3034";ctx.lineWidth=1;
-  for(let i=0;i<4;i++){const y=p+(h-p*2)*i/3;ctx.beginPath();ctx.moveTo(p,y);ctx.lineTo(w-p,y);ctx.stroke()}
-  if(samples.length<2)return; const max=Math.max(1000,...samples.map(s=>s.value))*1.1;
-  ctx.strokeStyle="#35d07f";ctx.lineWidth=2;ctx.beginPath();samples.forEach((s,i)=>{const x=p+(w-p*2)*i/59,y=h-p-(h-p*2)*s.value/max;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
-}
-
-function render(data) {
-  const feed=data.feed??{}, connected=Boolean(feed.connected), bitrate=Number(feed.bitrate)||0;
-  $("#bitrate").innerHTML=`${Math.round(bitrate).toLocaleString()}<small>kbps</small>`; $("#top-bitrate").textContent=formatBitrate(bitrate);
-  $("#bitrate-meter").style.width=`${Math.min(100,bitrate/60)}%`; $("#last-update").textContent=age(feed.timestamp);
-  const badge=$("#feed-badge");badge.className=`badge ${connected?"healthy":"offline"}`;badge.textContent=connected?"● Connected":"● Offline";
-  $("#services").innerHTML=services.map(([key,name])=>{const item=data.services?.[key]??{state:"unknown"};return `<div class="service" title="${item.note??""}"><span class="dot ${item.state}"></span><span><strong>${name}</strong><small>${serviceLabel(item.state)}</small></span></div>`}).join("");
-  $("#updated").textContent=`Updated ${age(data.checkedAt)}`; $("#control-note").textContent=data.controls?.reason??"Controls unavailable";
-  if(previousConnected!==undefined&&previousConnected!==connected)addEvent(connected?"Feed reconnected":"Feed disconnected",connected?"MediaMTX is receiving Feed 1.":"No active publisher detected for Feed 1.");
-  previousConnected=connected; samples.push({value:bitrate});if(samples.length>60)samples.shift();drawChart();
-  $("#chart-summary").textContent=`Current bitrate ${formatBitrate(bitrate)}. RTT data is unavailable.`;
-}
-
-async function refresh(){try{const response=await fetch("/api/v1/dashboard/status",{cache:"no-store"});if(!response.ok)throw new Error(`HTTP ${response.status}`);render(await response.json())}catch(error){addEvent("Dashboard connection lost",String(error));$("#feed-badge").textContent="Dashboard offline"}}
-addEvent("Dashboard ready","Live Feed 1 telemetry is sourced from stats-bridge.");refresh();setInterval(refresh,2000);addEventListener("resize",drawChart);
+const $=(s)=>document.querySelector(s);const services=[["obs","OBS"],["noalbs","NOALBS"],["srtla","SRTLA"],["mediaMtx","MediaMTX"],["statsBridge","Stats bridge"]],samples=[];
+const formatBitrate=(v)=>`${Math.max(0,Math.round(Number(v)||0)).toLocaleString()} kbps`;const age=(t)=>{if(!t)return"No sample";const s=Math.max(0,Math.round((Date.now()-t)/1000));return s<2?"Just now":`${s}s ago`};const serviceLabel=(s)=>s==="healthy"?"Healthy":s==="degraded"?"Degraded":s==="offline"?"Offline":"Unavailable";function setBadge(e,s,l){e.className=`badge ${s}`;e.textContent=l}
+function drawChart(){const c=$("#chart");if(!c||c.offsetParent===null)return;const r=c.getBoundingClientRect(),d=devicePixelRatio||1;c.width=Math.max(1,r.width*d);c.height=255*d;const x=c.getContext("2d"),w=r.width,h=255,L=42,R=10,T=13,B=25;x.scale(d,d);x.font="11px system-ui";x.fillStyle="#263037";x.strokeStyle="#596269";const max=Math.max(1000,...samples.map(s=>s.value))*1.12;for(let i=0;i<5;i++){const y=T+(h-T-B)*i/4;x.beginPath();x.moveTo(L,y);x.lineTo(w-R,y);x.stroke();x.fillText(Math.round(max*(1-i/4)).toLocaleString(),2,y+4)}x.fillText("60s ago",L,h-6);x.fillText("now",w-30,h-6);if(samples.length<2)return;x.strokeStyle="#f4f7f8";x.lineWidth=2;x.beginPath();samples.forEach((s,i)=>{const px=L+(w-L-R)*i/59,py=h-B-(h-T-B)*s.value/max;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke()}
+function render(data){const f=data.feed??{},on=Boolean(f.connected),b=Number(f.bitrate)||0;$("#bitrate").textContent=Math.round(b).toLocaleString();$("#last-update").textContent=`Updated ${age(f.timestamp)}`;$("#chart-bitrate").textContent=formatBitrate(b);$("#bottom-bitrate").textContent=formatBitrate(b);setBadge($("#feed-badge"),on?"healthy":"offline",on?"Online":"Offline");$("#chart-dot").className=`dot ${on?"healthy":"offline"}`;$("#bottom-ingest").className=`status-pill ${on?"healthy":"offline"}`;$("#bottom-ingest").textContent=`Main Ingest ${on?"online":"offline"}`;const live=Boolean(data.program?.state);setBadge($("#stream-badge"),live?"healthy":"neutral",live?data.program.state:"Unavailable");$("#bottom-stream").className=`status-pill ${live?"healthy":"offline"}`;$("#bottom-stream").textContent=live?`Stream ${data.program.state}`:"Stream unavailable";setBadge($("#scene-badge"),data.program?.scene?"healthy":"neutral",data.program?.scene??"Unavailable");$("#control-note").textContent=data.controls?.reason??"Controls unavailable";$("#services").innerHTML=services.map(([k,n])=>{const i=data.services?.[k]??{state:"unknown"};return`<div class="service" title="${i.note??""}"><span class="dot ${i.state}"></span><span><strong>${n}</strong><small>${serviceLabel(i.state)}</small></span></div>`}).join("");$("#updated").textContent=`Updated ${age(data.checkedAt)}`;samples.push({value:b});if(samples.length>60)samples.shift();drawChart();$("#chart-summary").textContent=`Current Feed 1 bitrate ${formatBitrate(b)}. RTT data is unavailable.`}
+function syncCards(){if(matchMedia("(max-width:760px)").matches)$("#scene").removeAttribute("open");else $("#scene").setAttribute("open","")}async function refresh(){try{const r=await fetch("/api/v1/dashboard/status",{cache:"no-store"});if(!r.ok)throw new Error();render(await r.json())}catch{setBadge($("#feed-badge"),"offline","Dashboard offline");$("#bottom-ingest").textContent="Telemetry unavailable"}}syncCards();refresh();setInterval(refresh,2000);addEventListener("resize",()=>{syncCards();drawChart()});
