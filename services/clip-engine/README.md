@@ -1,5 +1,5 @@
-# Clip engine
+# Clip engine (planned)
 
-Catalogs and cues local BRB clips while keeping OBS responsible for program playback.
+The clip engine will catalog approved local media and cue BRB playback through OBS. OBS remains responsible for rendering and program output.
 
-This workspace is a placeholder. Document its API and failure behavior here before adding implementation.
+There is no clip engine implementation in this directory. The design must constrain media roots and file types, reject arbitrary paths, and define what happens when a clip cannot be loaded or played.

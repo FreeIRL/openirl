@@ -1,5 +1,5 @@
 # MediaMTX integration
 
-MediaMTX is the media router for SRT and RTMP-family contribution feeds and OBS consumption.
+MediaMTX is the media router for contribution feeds and OBS consumption. The checked-in configuration supports unauthenticated SRT and RTMP development traffic; it is not suitable for an internet-facing host.
 
-The three stable path conventions are `live/feed-1`, `live/feed-2`, and `live/feed-3`. Public publishing, authentication, protocol ports, and version-pinned deployment configuration will be finalized during the first end-to-end milestone.
+The reserved paths are `live/feed-1`, `live/feed-2`, and `live/feed-3`. Only `feed-1` is currently exercised by `stats-bridge`. Publisher authentication and TLS remain deployment work.

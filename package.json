@@ -1,8 +1,8 @@
 {
   "name": "openirl",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "description": "Self-hosted control plane for resilient IRL livestreaming",
+  "description": "Self-hosted tools for resilient IRL livestreaming",
   "license": "MIT",
   "workspaces": [
     "apps/*",

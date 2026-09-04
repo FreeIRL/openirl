@@ -1,14 +1,24 @@
-# Contributing
+# Contributing to OpenIRL
 
-OpenIRL is early-stage. Keep changes small, observable, and usable on modest self-hosted hardware.
+OpenIRL is pre-release software with one runnable service. Contributions should either strengthen the existing MediaMTX-to-`stats-bridge` path or implement a clearly documented part of the planned architecture.
 
-## Ground rules
+## Before opening a pull request
 
-- Open an issue before introducing a new service or changing a public contract.
-- Never commit stream keys, OAuth tokens, passwords, recordings, or viewer data.
-- Keep media transport out of the control API; MediaMTX owns media routing.
-- Add health checks and useful error messages with every runnable component.
-- Document configuration defaults and failure behavior.
-- Prefer hardware-assisted encoding in deployment guidance; do not assume a powerful CPU.
+- Discuss new services and public contract changes in an issue first.
+- Keep media transport in MediaMTX rather than proxying it through the control API.
+- Do not commit stream keys, OAuth tokens, passwords, recordings, or viewer data.
+- Document configuration, failure behavior, and operational ownership for runnable components.
+- Include health reporting and actionable errors for long-running services.
+- Account for low-power hosts; prefer hardware-assisted encoding in deployment guidance.
 
-Run `npm run check` before submitting a pull request. More specific testing and formatting commands will be added as implementations land.
+Install dependencies and run:
+
+```sh
+npm run check
+```
+
+The command currently checks `stats-bridge`, the only implemented workspace. Add relevant tests and checks when making another workspace runnable.
+
+## Pull requests
+
+Keep changes focused. In the description, state what is implemented, how it was tested, and any known operational limits. Do not describe planned behavior as available behavior.

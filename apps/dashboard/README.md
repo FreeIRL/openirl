@@ -1,5 +1,5 @@
-# Operator dashboard
+# Operator dashboard (planned)
 
-Shows feed health, program state, alerts, and safe mobile controls.
+The dashboard will present feed health, program state, alerts, and a small set of mobile-friendly operator controls. It will use the control API and must not connect directly to MediaMTX, OBS, or NOALBS.
 
-This workspace is a placeholder. Document its API and failure behavior here before adding implementation.
+There is no dashboard implementation in this directory. Its first version should follow the control API contract rather than defining a separate source of system state.

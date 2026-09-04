@@ -1,5 +1,5 @@
-# Ingest manager
+# Ingest manager (planned)
 
-Owns three logical feed slots and coordinates SRTLA, SRT, RTMP, and RTMPS lifecycle.
+The ingest manager will own the lifecycle of up to three logical feeds and map their transports to stable MediaMTX paths. Receiver restarts and transport changes must not change a feed's identity.
 
-This workspace is a placeholder. Document its API and failure behavior here before adding implementation.
+There is no ingest manager implementation in this directory. Its contract must define feed allocation, receiver supervision, retries, and cleanup before code is added.

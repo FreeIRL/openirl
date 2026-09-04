@@ -1,3 +1,3 @@
-# Scripts
+# Operational scripts
 
-Setup, validation, migration, and maintenance helpers belong here. Scripts must be non-interactive where practical, fail clearly, and avoid modifying operator recordings or secrets.
+No operational scripts are included yet. Future setup and maintenance commands belong here when they are exercised by documentation or automation. They should be non-interactive where practical, fail with actionable errors, and never modify recordings or credentials.

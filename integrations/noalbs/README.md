@@ -1,5 +1,5 @@
-# NOALBS integration
+# NOALBS integration example
 
-Adapter boundary for NOALBS health input and automatic scene switching.
+`config.example.json` connects NOALBS to the implemented `stats-bridge` WebSocket endpoint and maps feed state to OBS scenes.
 
-The integration will translate normalized feed health into configured live, degraded, offline, and BRB scenes with recovery delays that prevent rapid scene flapping.
+Copy the file outside the repository and replace the OBS password before use. The example assumes scenes named `Live`, `Low Bitrate`, and `BRB`; OpenIRL does not create or validate them yet.

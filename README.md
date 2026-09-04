@@ -1,88 +1,85 @@
 # OpenIRL
 
-OpenIRL is a free, self-hosted control plane for IRL livestreaming. The project is being designed around a small home server and three simultaneous contribution feeds, with MediaMTX handling media transport and OBS producing the final program output.
+OpenIRL is an early-stage, self-hosted toolkit for resilient IRL livestreaming. MediaMTX carries contribution feeds, OBS produces the program output, and OpenIRL supplies the health data and control services around them.
 
-> [!IMPORTANT]
-> OpenIRL is in the scaffolding phase. The repository currently defines boundaries, configuration, and the intended deployment shape; it is not ready for production streaming.
+> [!WARNING]
+> This repository is not a complete streaming system. The MediaMTX development configuration and `stats-bridge` service are runnable; the remaining components are design work and have no implementation yet.
 
-## Goals
+## What works today
 
-- Accept up to three simultaneous contribution feeds using SRTLA, SRT, RTMP, or RTMPS.
-- Normalize and route media through MediaMTX.
-- Control OBS remotely through obs-websocket.
-- Let NOALBS switch between live, degraded, offline, and BRB scenes.
-- Play managed BRB clips when a contribution feed is unavailable.
-- Expose health, bitrate, connection, and service status to a dashboard.
-- Provide Twitch chat commands and operational notifications.
-- Remain practical on modest self-hosted hardware, including Intel Quick Sync systems.
+- A version-pinned MediaMTX container accepts direct SRT and RTMP publishers.
+- `stats-bridge` polls MediaMTX metrics and exposes feed state over HTTP and WebSocket.
+- A NOALBS example consumes the bridge's feed statistics.
+- Tests cover Prometheus parsing and bitrate calculation.
 
-## Supported platforms
+The current path is deliberately limited to one feed (`feed-1`). SRTLA reception, OBS automation, multi-feed management, the dashboard, the control API, clip playback, and Twitch commands remain planned work. See [Phase 1](docs/phase-1.md) for the working development path.
 
-OpenIRL's primary server target is **Ubuntu Server 24.04.4 LTS**.
+## Target system
 
-| Platform | Status | Notes |
-| --- | --- | --- |
-| Ubuntu Server 24.04.4 LTS | Primary | First installer and deployment target |
-| Ubuntu Desktop 24.04 LTS | Supported target | Useful for development and non-headless OBS |
-| Other Linux distributions | Planned | Support will follow after the Ubuntu Server path is stable |
-| Windows | Later | Not a v1 server-host target |
-| macOS | Not planned as a server target | Development/client use only |
+OpenIRL is intended to:
 
-On Ubuntu Server, OBS will run headlessly using a virtual Xorg/Xvfb-style display session or equivalent. On Intel systems such as N5095-class mini PCs, OpenIRL should use Intel VA-API / Quick Sync hardware acceleration where available instead of relying on CPU-heavy software encoding.
+- accept as many as three contribution feeds over SRTLA, SRT, RTMP, or RTMPS;
+- route those feeds through MediaMTX;
+- control OBS through obs-websocket;
+- supply NOALBS with stable health signals for fallback switching;
+- expose feed and service health to an operator dashboard; and
+- support a small, permission-aware set of Twitch chat commands.
 
-## Repository layout
+These are project goals, not claims about the current implementation.
 
-| Path | Responsibility |
+## Platform support
+
+Ubuntu Server 24.04.4 LTS is the first deployment target. The planned colocated setup runs OBS in a supervised virtual display session and uses Intel VA-API or Quick Sync when available. Installer automation and hardware diagnostics have not been implemented.
+
+| Platform | Project position |
 | --- | --- |
-| `apps/dashboard` | Operator dashboard and mobile-friendly controls |
-| `apps/api` | Public API, authentication, orchestration, and service status |
-| `services/ingest-manager` | Feed lifecycle and protocol-to-MediaMTX coordination |
-| `services/stats-bridge` | Health and telemetry normalization |
-| `services/clip-engine` | BRB clip catalog and playback coordination |
-| `services/twitch-bot` | Twitch chat commands and notifications |
-| `integrations/obs` | OBS WebSocket adapter and scene contract |
-| `integrations/noalbs` | NOALBS adapter and switching policy |
-| `integrations/mediamtx` | MediaMTX configuration and path conventions |
-| `integrations/srtla` | SRTLA receiver integration notes |
-| `config` | Versioned, non-secret configuration examples |
-| `docker` | Self-hosted container deployment assets |
-| `docs` | Architecture and operating documentation |
-| `scripts` | Setup, validation, and maintenance scripts |
+| Ubuntu Server 24.04.4 LTS | Primary deployment target |
+| Ubuntu Desktop 24.04 LTS | Development target; not yet validated end to end |
+| Other Linux distributions | Not yet supported |
+| Windows and macOS | Development clients only; not server targets |
 
-## High-level flow
+## Repository map
 
-```text
-Cameras / phones
-  ├─ SRTLA
-  ├─ SRT
-  ├─ RTMP
-  └─ RTMPS
-        │
-        ▼
-Ingest manager ──► MediaMTX ──► OBS ──► streaming platform
-        │               │         ▲
-        └─ health ───────┴─► NOALBS / stats bridge
-                                  │
-Dashboard / API / Twitch bot ◄────┴────► clip engine
+| Path | Status | Scope |
+| --- | --- | --- |
+| `services/stats-bridge` | Runnable | MediaMTX telemetry normalization and NOALBS feed |
+| `integrations/mediamtx` | Runnable baseline | Development routing configuration |
+| `integrations/noalbs` | Example | NOALBS connection and scene mapping |
+| `apps/api` | Planned | Authentication, commands, and public status API |
+| `apps/dashboard` | Planned | Operator status and controls |
+| `services/ingest-manager` | Planned | Feed and receiver lifecycle |
+| `services/clip-engine` | Planned | BRB media catalog and cueing |
+| `services/twitch-bot` | Planned | Chat commands and notifications |
+| `integrations/obs` | Planned | obs-websocket adapter and scene contract |
+| `integrations/srtla` | Planned | Bonded contribution receiver |
+
+## Development
+
+Requirements:
+
+- Node.js 22 or newer
+- npm 10 or newer
+- Docker with Compose for the end-to-end development path
+
+Install dependencies and run the implemented checks:
+
+```sh
+npm install
+npm run check
 ```
 
-Each logical feed has one stable identity (`feed-1`, `feed-2`, or `feed-3`) regardless of transport. Secrets and stream keys must be supplied at deployment time and must never be committed.
+To exercise the media and telemetry path, follow [docs/phase-1.md](docs/phase-1.md). The checked-in MediaMTX configuration has no publisher credentials and must not be exposed to the public internet.
 
-## Getting started
+## Design constraints
 
-1. Use Ubuntu Server 24.04.4 LTS for the primary supported server deployment.
-2. Install Node.js 22 or newer and npm 10 or newer.
-3. Copy `.env.example` to `.env` and fill in only the integrations you are testing.
-4. Review `config/openirl.example.yaml` for the initial feed and scene contract.
-5. Run `npm install` once package implementations begin.
-6. Run `npm run check` to validate the workspace placeholders.
+- Media transport remains independent of the control plane.
+- Feed identity does not change when transport changes.
+- Losing the API or dashboard must not interrupt active media.
+- Credentials belong in environment variables or mounted secret files.
+- Deployment guidance must remain practical for low-power Intel hosts.
 
-The first implementation milestone is one end-to-end SRT/SRTLA feed routed through MediaMTX into OBS, with NOALBS-driven fallback. Additional transports and feeds should follow only after that path is measurable and reliable.
-
-## Status and contribution
-
-Interfaces are intentionally small while the architecture is validated. Before implementing a component, document its inputs, outputs, failure behavior, and ownership in that component's README. See [docs/architecture.md](docs/architecture.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+More detail is available in [Architecture](docs/architecture.md), [Security](docs/security.md), and [Contributing](CONTRIBUTING.md).
 
 ## License
 
-OpenIRL is licensed under the [MIT License](LICENSE). Third-party services and binaries retain their own licenses.
+[MIT](LICENSE). Third-party services and binaries retain their own licenses.

@@ -1,6 +1,6 @@
-# Phase 1: one observable contribution feed
+# Phase 1 development walkthrough
 
-This milestone proves one stable feed before adding multi-feed orchestration.
+This walkthrough exercises the code that exists today: one direct SRT or RTMP feed through MediaMTX, observed by `stats-bridge`. OBS and NOALBS are configured manually.
 
 ## 1. Start the media and health services
 
@@ -53,7 +53,7 @@ curl http://127.0.0.1:9090/api/v1/feeds/feed-1
 
 After the second MediaMTX sample, the feed response reports derived bitrate in kbps. Disconnecting the publisher should set `connected` to false.
 
-## 5. Connect NOALBS
+## 5. Connect NOALBS manually
 
 Copy `integrations/noalbs/config.example.json` outside the repository, replace the OBS password at deployment, and configure NOALBS to consume:
 
@@ -63,6 +63,6 @@ ws://127.0.0.1:9090/ws-stats?feed=feed-1
 
 Run NOALBS on the OBS host for the simplest network arrangement. Verify transitions by lowering the publisher bitrate and disconnecting it.
 
-## SRTLA boundary
+## Next milestone: SRTLA
 
-SRTLA receiver setup follows after direct SRT is proven. Its play output will be forwarded to the same `live/feed-1` MediaMTX path, and its receiver statistics will augment this bridge with RTT and packet loss. This preserves one feed identity and avoids coupling the rest of OpenIRL to a specific receiver image.
+SRTLA receiver support is not implemented. The planned receiver will forward its output to `live/feed-1` and add RTT and packet-loss observations without changing the feed identity.

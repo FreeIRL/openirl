@@ -1,5 +1,5 @@
-# Twitch bot
+# Twitch bot (planned)
 
-Provides a minimal, permission-aware set of chat status commands and notifications.
+The Twitch bot will provide a limited set of status commands and operational notifications through the control API. It will not receive direct OBS or media-server credentials.
 
-This workspace is a placeholder. Document its API and failure behavior here before adding implementation.
+There is no bot implementation in this directory. Command permissions, rate limits, token storage, and behavior during API outages must be specified before implementation.

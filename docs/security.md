@@ -1,6 +1,6 @@
 # Security baseline
 
-OpenIRL will handle stream keys, OBS control, and chat credentials. Treat the control plane as privileged infrastructure.
+The completed system will handle stream keys, OBS control, and chat credentials. Treat every control component as privileged infrastructure.
 
 - Keep the dashboard, API, MediaMTX API, metrics, OBS WebSocket, and NOALBS on a private network by default.
 - Terminate public TLS at a maintained reverse proxy.
@@ -11,4 +11,4 @@ OpenIRL will handle stream keys, OBS control, and chat credentials. Treat the co
 - Validate clip paths and file types; never accept arbitrary filesystem paths from chat commands.
 - Rate-limit Twitch commands and keep their permissions narrower than dashboard controls.
 
-A formal threat model and hardening guide will be required before the first production release.
+Production deployment is out of scope until the project has a threat model, authenticated control API, credentialed publishing, and a tested hardening guide.
