@@ -10,10 +10,10 @@ OpenIRL is an early-stage, self-hosted toolkit for resilient IRL livestreaming. 
 - A version-pinned MediaMTX container accepts direct SRT and RTMP publishers.
 - `stats-bridge` polls MediaMTX metrics and exposes feed state over HTTP and WebSocket.
 - A NOALBS example consumes the bridge's feed statistics.
-- A responsive, read-only operator dashboard presents live Feed 1 telemetry.
+- A responsive operator dashboard presents Feed 1 telemetry and guarded OBS scene/stream controls.
 - Tests cover Prometheus parsing and bitrate calculation.
 
-The current path is deliberately limited to one feed (`feed-1`). SRTLA reception and the read-only dashboard are runnable. OBS automation, authentication/control API, multi-feed management, clip playback, and Twitch commands remain planned work. See [Phase 1](docs/phase-1.md) for the working development path.
+The current path is deliberately limited to one feed (`feed-1`). SRTLA reception and the loopback-only dashboard are runnable. The dashboard backend supports a narrow token-protected OBS control API; multi-feed management, clip playback, and Twitch commands remain planned work. See [Phase 1](docs/phase-1.md) for the working development path.
 
 ## Target system
 
@@ -47,11 +47,11 @@ Ubuntu Server 24.04.4 LTS is the first deployment target. The planned colocated 
 | `integrations/mediamtx` | Runnable baseline | Development routing configuration |
 | `integrations/noalbs` | Example | NOALBS connection and scene mapping |
 | `apps/api` | Planned | Authentication, commands, and public status API |
-| `apps/dashboard` | Runnable, read-only | Responsive operator status UI; controls await auth/API |
+| `apps/dashboard` | Runnable | Responsive status UI and narrow token-protected OBS control API |
 | `services/ingest-manager` | Planned | Feed and receiver lifecycle |
 | `services/clip-engine` | Planned | BRB media catalog and cueing |
 | `services/twitch-bot` | Planned | Chat commands and notifications |
-| `integrations/obs` | Planned | obs-websocket adapter and scene contract |
+| `integrations/obs` | Runnable in dashboard | obs-websocket adapter and fixed scene contract |
 | `integrations/srtla` | Planned | Bonded contribution receiver |
 
 ## Development

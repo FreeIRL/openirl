@@ -10,6 +10,7 @@ The completed system will handle stream keys, OBS control, and chat credentials.
 - Bind metrics and health endpoints privately unless intentionally proxied.
 - Validate clip paths and file types; never accept arbitrary filesystem paths from chat commands.
 - Rate-limit Twitch commands and keep their permissions narrower than dashboard controls.
+- Use different random values for `OBS_WEBSOCKET_PASSWORD` and `OPENIRL_CONTROL_TOKEN`. The latter is required on every mutating dashboard request.
 
 Production deployment is out of scope until the project has a threat model, authenticated control API, credentialed publishing, and a tested hardening guide.
 
@@ -30,6 +31,8 @@ sudo ufw status verbose
 Open a second SSH session before closing the first. The router should have one UDP port forward: external port 5000 to port 5000 at the mini PC's DHCP-reserved LAN address. Do not forward TCP 22 to the public Internet merely because it is allowed on the host firewall; restrict SSH at the router or access it over a VPN.
 
 Do **not** forward ports 1935, 8890, 4455, 8080, 9090, 9997, or 9998. Compose binds dashboard port 8080 and stats port 9090 to loopback.
+
+On the single-host Ubuntu deployment, the dashboard container uses host networking solely to connect to OBS at `127.0.0.1:4455`; its HTTP listener is explicitly bound to `127.0.0.1:8080`. Do not change either bind address to `0.0.0.0`. Remote operator access should continue through the documented SSH tunnel or a private authenticated proxy/VPN.
 
 ## Ingest credential
 

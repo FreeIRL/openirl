@@ -46,11 +46,14 @@ test("SRTLA image pins upstream and initializes its build dependency", async () 
   assert.match(dockerfile, /USER srtla/);
 });
 
-test("dashboard remains loopback-only and consumes stats-bridge internally", async () => {
+test("dashboard remains loopback-only while reaching local OBS", async () => {
   const compose = await read("docker/compose.yaml");
   assert.match(compose, /dashboard:/);
-  assert.match(compose, /STATS_BRIDGE_URL: http:\/\/stats-bridge:9090/);
-  assert.match(compose, /- "127\.0\.0\.1:8080:8080"/);
+  assert.match(compose, /BIND_HOST: 127\.0\.0\.1/);
+  assert.match(compose, /STATS_BRIDGE_URL: http:\/\/127\.0\.0\.1:9090/);
+  assert.match(compose, /OBS_WEBSOCKET_URL: ws:\/\/127\.0\.0\.1:4455/);
+  assert.match(compose, /network_mode: host/);
+  assert.doesNotMatch(compose, /4455:4455/);
 });
 
 test("security guide exposes only SRTLA and contains no deployed secret", async () => {
