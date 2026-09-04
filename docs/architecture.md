@@ -31,6 +31,12 @@ Transport reconnects do not change a feed's identity. The stats bridge supplies 
 
 ## Deployment direction
 
-The initial deployment is a single Linux host running MediaMTX and OpenIRL services in containers, with OBS either on the host or another trusted LAN machine. The design should later allow services to move to separate hosts without changing feed IDs or public API contracts.
+The primary v1 deployment target is **Ubuntu Server 24.04.4 LTS** on a single Linux host running MediaMTX and OpenIRL services. OBS may run on the same host or another trusted LAN machine, but the initial self-hosted server path assumes OBS is colocated.
+
+Because Ubuntu Server is headless by default, colocated OBS requires a managed virtual display/session such as Xorg/Xvfb or an equivalent approach. The deployment layer should treat the OBS display session as a supervised dependency rather than requiring a full desktop environment.
+
+For Intel systems, especially N5095-class mini PCs and similar low-power hosts, the deployment should detect and prefer Intel VA-API / Quick Sync hardware acceleration where available. `/dev/dri` access and the relevant Intel media drivers should be validated by diagnostics before OBS or FFmpeg hardware encoding is enabled.
+
+The first installer should target Ubuntu Server 24.04.4 LTS. Other Linux distributions can be added after this deployment path is stable. The design should later allow services to move to separate hosts without changing feed IDs or public API contracts.
 
 See [security.md](security.md) before exposing any endpoint outside a private network.
