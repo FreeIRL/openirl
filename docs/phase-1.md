@@ -74,6 +74,26 @@ Verify all four transitions:
 3. Publisher stopped → `BRB`.
 4. Publisher restarted at normal bitrate → `Live`.
 
+## 6. Run the dashboard on the mini PC
+
+The dashboard is included in the default Compose stack. On the Ubuntu mini PC:
+
+```sh
+cd ~/openirl
+git pull --ff-only
+docker compose -f docker/compose.yaml up --build -d
+docker compose -f docker/compose.yaml ps
+curl http://127.0.0.1:8080/healthz
+```
+
+From an SSH client, create a temporary private tunnel:
+
+```sh
+ssh -L 8080:127.0.0.1:8080 YOUR_USER@MINI_PC_LAN_IP
+```
+
+Then open `http://127.0.0.1:8080` on that client. This requires no new firewall rule. For routine remote/mobile access, place the loopback-only dashboard behind an authenticated HTTPS reverse proxy or private VPN. The first dashboard release is intentionally read-only: its scene and end-stream buttons are disabled rather than pretending to control OBS.
+
 ## Optional SRTLA ingest (initial milestone)
 
 Start the receiver path with:

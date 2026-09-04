@@ -55,4 +55,24 @@ services:
     ports:
       - "127.0.0.1:9090:9090"
 
+  dashboard:
+    build:
+      context: ../apps/dashboard
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      STATS_BRIDGE_URL: http://stats-bridge:9090
+      FEED_ID: feed-1
+    depends_on:
+      - stats-bridge
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
 # OBS and NOALBS run outside this development stack. See docs/phase-1.md.

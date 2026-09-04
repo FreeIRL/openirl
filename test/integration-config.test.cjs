@@ -45,3 +45,17 @@ test("SRTLA image pins upstream and initializes its build dependency", async () 
   assert.match(dockerfile, /submodule update --init --recursive/);
   assert.match(dockerfile, /USER srtla/);
 });
+
+test("dashboard remains loopback-only and consumes stats-bridge internally", async () => {
+  const compose = await read("docker/compose.yaml");
+  assert.match(compose, /dashboard:/);
+  assert.match(compose, /STATS_BRIDGE_URL: http:\/\/stats-bridge:9090/);
+  assert.match(compose, /- "127\.0\.0\.1:8080:8080"/);
+});
+
+test("security guide exposes only SRTLA and contains no deployed secret", async () => {
+  const guide = await read("docs/security.md");
+  assert.match(guide, /ufw allow 5000\/udp/);
+  assert.match(guide, /Do \*\*not\*\* forward ports 1935, 8890, 4455, 8080, 9090, 9997, or 9998/);
+  assert.match(guide, /YOUR_SECRET/);
+});
