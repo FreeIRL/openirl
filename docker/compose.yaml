@@ -13,6 +13,34 @@ services:
     volumes:
       - ../integrations/mediamtx/mediamtx.yml:/mediamtx.yml:ro
 
+  srtla-receiver:
+    profiles: ["srtla"]
+    build:
+      context: ../integrations/srtla
+    restart: unless-stopped
+    init: true
+    command:
+      - --srtla_port
+      - "5000"
+      - --srt_hostname
+      - mediamtx
+      - --srt_port
+      - "8890"
+      - --log_level
+      - info
+    depends_on:
+      - mediamtx
+    ports:
+      - "5000:5000/udp"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 10s
+
   stats-bridge:
     build:
       context: ../services/stats-bridge

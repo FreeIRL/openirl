@@ -1,4 +1,9 @@
 {
+  "user": {
+    "id": null,
+    "name": "openirl",
+    "passwordHash": null
+  },
   "switcher": {
     "bitrateSwitcherEnabled": true,
     "onlySwitchWhenStreaming": false,
@@ -9,7 +14,8 @@
       "rtt": 1000,
       "offline": 200
     },
-    "scenes": {
+    "autoSwitchNotification": false,
+    "switchingScenes": {
       "normal": "Live",
       "low": "Low Bitrate",
       "offline": "BRB"
@@ -18,8 +24,10 @@
       {
         "streamServer": {
           "type": "WebSocket",
-          "statsUrl": "ws://stats-bridge:9090/ws-stats?feed=feed-1",
-          "feed": "feed-1"
+          "url": "ws://127.0.0.1:9090/ws-stats?feed=feed-1",
+          "feed": "feed-1",
+          "reconnectIntervalMs": 1000,
+          "staleTimeoutMs": 3000
         },
         "name": "OpenIRL feed-1",
         "priority": 0,
@@ -31,8 +39,25 @@
   },
   "software": {
     "type": "Obs",
-    "host": "host.docker.internal",
+    "host": "127.0.0.1",
     "password": "REPLACE_AT_DEPLOYMENT",
-    "port": 4455
+    "port": 4455,
+    "collections": {}
+  },
+  "chat": null,
+  "optionalScenes": {
+    "starting": null,
+    "ending": null,
+    "privacy": null,
+    "refresh": null
+  },
+  "optionalOptions": {
+    "twitchTranscodingCheck": false,
+    "twitchTranscodingRetries": 5,
+    "twitchTranscodingDelaySeconds": 15,
+    "offlineTimeout": null,
+    "recordWhileStreaming": false,
+    "switchToStartingSceneOnStreamStart": false,
+    "switchFromStartingSceneToLiveScene": false
   }
 }
