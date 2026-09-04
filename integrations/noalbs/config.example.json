@@ -1,0 +1,38 @@
+{
+  "switcher": {
+    "bitrateSwitcherEnabled": true,
+    "onlySwitchWhenStreaming": false,
+    "instantlySwitchOnRecover": false,
+    "retryAttempts": 5,
+    "triggers": {
+      "low": 1200,
+      "rtt": 1000,
+      "offline": 200
+    },
+    "scenes": {
+      "normal": "Live",
+      "low": "Low Bitrate",
+      "offline": "BRB"
+    },
+    "streamServers": [
+      {
+        "streamServer": {
+          "type": "WebSocket",
+          "statsUrl": "ws://stats-bridge:9090/ws-stats?feed=feed-1",
+          "feed": "feed-1"
+        },
+        "name": "OpenIRL feed-1",
+        "priority": 0,
+        "overrideScenes": null,
+        "dependsOn": null,
+        "enabled": true
+      }
+    ]
+  },
+  "software": {
+    "type": "Obs",
+    "host": "host.docker.internal",
+    "password": "REPLACE_AT_DEPLOYMENT",
+    "port": 4455
+  }
+}

@@ -1,4 +1,22 @@
-# Development baseline only. Harden authentication and pin the image before production.
+# Development baseline only. Add publish credentials and TLS before exposing it.
+logLevel: info
+
+authMethod: internal
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+      - action: read
+      - action: playback
+  - user: any
+    pass:
+    ips: ["127.0.0.1", "::1", "172.16.0.0/12"]
+    permissions:
+      - action: api
+      - action: metrics
+
 api: yes
 apiAddress: :9997
 metrics: yes

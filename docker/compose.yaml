@@ -2,15 +2,30 @@ name: openirl
 
 services:
   mediamtx:
-    image: bluenviron/mediamtx:latest
+    image: bluenviron/mediamtx:1.20.1
     restart: unless-stopped
     ports:
       - "1935:1935"
       - "8890:8890/udp"
-      - "9997:9997"
-      - "9998:9998"
+    expose:
+      - "9997"
+      - "9998"
     volumes:
       - ../integrations/mediamtx/mediamtx.yml:/mediamtx.yml:ro
 
-# Application services will be added here as each package becomes runnable.
-# Pin image versions before the first production release.
+  stats-bridge:
+    build:
+      context: ../services/stats-bridge
+    restart: unless-stopped
+    environment:
+      MEDIAMTX_METRICS_URL: http://mediamtx:9998/metrics
+      FEED_ID: feed-1
+      MEDIA_PATH: live/feed-1
+      PORT: 9090
+    depends_on:
+      - mediamtx
+    ports:
+      - "127.0.0.1:9090:9090"
+
+# NOALBS and OBS are configured after OBS scenes exist. Application services will
+# be added here as each package becomes runnable.
