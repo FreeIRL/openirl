@@ -16,6 +16,20 @@ OpenIRL is a free, self-hosted control plane for IRL livestreaming. The project 
 - Provide Twitch chat commands and operational notifications.
 - Remain practical on modest self-hosted hardware, including Intel Quick Sync systems.
 
+## Supported platforms
+
+OpenIRL's primary server target is **Ubuntu Server 24.04.4 LTS**.
+
+| Platform | Status | Notes |
+| --- | --- | --- |
+| Ubuntu Server 24.04.4 LTS | Primary | First installer and deployment target |
+| Ubuntu Desktop 24.04 LTS | Supported target | Useful for development and non-headless OBS |
+| Other Linux distributions | Planned | Support will follow after the Ubuntu Server path is stable |
+| Windows | Later | Not a v1 server-host target |
+| macOS | Not planned as a server target | Development/client use only |
+
+On Ubuntu Server, OBS will run headlessly using a virtual Xorg/Xvfb-style display session or equivalent. On Intel systems such as N5095-class mini PCs, OpenIRL should use Intel VA-API / Quick Sync hardware acceleration where available instead of relying on CPU-heavy software encoding.
+
 ## Repository layout
 
 | Path | Responsibility |
@@ -56,11 +70,12 @@ Each logical feed has one stable identity (`feed-1`, `feed-2`, or `feed-3`) rega
 
 ## Getting started
 
-1. Install Node.js 22 or newer and npm 10 or newer.
-2. Copy `.env.example` to `.env` and fill in only the integrations you are testing.
-3. Review `config/openirl.example.yaml` for the initial feed and scene contract.
-4. Run `npm install` once package implementations begin.
-5. Run `npm run check` to validate the workspace placeholders.
+1. Use Ubuntu Server 24.04.4 LTS for the primary supported server deployment.
+2. Install Node.js 22 or newer and npm 10 or newer.
+3. Copy `.env.example` to `.env` and fill in only the integrations you are testing.
+4. Review `config/openirl.example.yaml` for the initial feed and scene contract.
+5. Run `npm install` once package implementations begin.
+6. Run `npm run check` to validate the workspace placeholders.
 
 The first implementation milestone is one end-to-end SRT/SRTLA feed routed through MediaMTX into OBS, with NOALBS-driven fallback. Additional transports and feeds should follow only after that path is measurable and reliable.
 
