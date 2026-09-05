@@ -46,4 +46,14 @@ Generate a unique value at deployment time, do not paste it into issue reports o
 
 The checked-in Feed 1 publish rules now require the existing hash via `FEED_1_PASSWORD_HASH`. Follow [the migration guide](feed-auth-and-audio-upgrade.md) before recreating MediaMTX. Anonymous publishing is disabled. OBS Mute/Unmute controls target only `OBS_INGEST_AUDIO_SOURCE` and require the control token.
 
-Docker-published ports can bypass UFW. Compose now binds direct RTMP 1935 and SRT 8890 to loopback as well; container-to-container SRTLA delivery still uses `mediamtx:8890`. Recreate MediaMTX to apply this change (brief ingest interruption). Audit local overrides and IPv6, use a maintained Docker Engine (28 or newer for the localhost publishing isolation fix), and test from another machine. Never rely on UFW alone to hide a wildcard Docker publication. Public HTTPS adds only TCP 80/443; Caddy uses host networking, so those listeners pass through the host firewall.
+Docker-published ports can bypass UFW. Compose now binds direct RTMP 1935 and SRT 8890 to loopback as well; container-to-container SRTLA delivery still uses `mediamtx:8890`. Recreate MediaMTX to apply this change (brief ingest interruption). Audit local overrides and IPv6, use a maintained Docker Engine (28 or newer for the localhost publishing isolation fix), and test from another machine. Never rely on UFW alone to hide a wildcard Docker publication. The optional direct-public Caddy path adds only TCP 80/443; Caddy uses host networking, so those listeners pass through the host firewall.
+
+## Cloudflare remote dashboard
+
+[Cloudflare Tunnel + Access](cloudflare-access.md) adds no inbound listeners except
+loopback-only connector metrics. Keep UFW deny-incoming and existing SSH/SRTLA
+rules. Tunnel is transport, not authentication: configure operator-only Access
+before publishing the hostname; without Access it is publicly reachable.
+Keep the connector token secret and revoke it if leaked. Cloudflare terminates
+public TLS; the encrypted tunnel ends at cloudflared, which uses local HTTP to
+`127.0.0.1:8080`. The independent control token remains required for mutations.

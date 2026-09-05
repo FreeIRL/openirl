@@ -17,7 +17,11 @@ The current path is deliberately limited to one feed (`feed-1`). SRTLA reception
 
 ## Remote dashboard
 
-For authenticated HTTPS on a phone, follow [Secure remote access](docs/remote-access.md). The optional Caddy stack keeps the dashboard on `127.0.0.1:8080`, adds an outer login, and preserves the separate mutation token. Public, LAN-only and CGNAT/private VPN paths are documented.
+For phone access, the dashboard stays on `127.0.0.1:8080` and mutations still require `OPENIRL_CONTROL_TOKEN`:
+
+- **Recommended for CGNAT/no port forwarding:** [Cloudflare Tunnel + Access](docs/cloudflare-access.md), using the optional Docker overlay and an operator-only Access policy.
+- **Direct public alternative:** [Caddy HTTPS + login](docs/remote-access.md), retaining the existing optional Caddy overlay.
+- **Private mesh alternative:** [Tailscale Serve](docs/remote-access.md#3c-cgnatprivate-remote-access-tailscale-serve), with Tailscale on the mini PC and phone.
 
 ## Target system
 

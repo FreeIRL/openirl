@@ -1,6 +1,8 @@
 # Secure remote/mobile access (Ubuntu Server 24.04)
 
-The minimal single-operator path is phone → Caddy HTTPS + Basic login →
+For CGNAT or no-port-forward access, use the recommended [Cloudflare Tunnel + Access guide](cloudflare-access.md). It needs no new inbound ports. This page retains the direct-public Caddy option and private-mesh Tailscale alternative; choose one remote access method.
+
+The Caddy single-operator path is phone → Caddy HTTPS + Basic login →
 `127.0.0.1:8080` → existing narrow dashboard API/preview. Caddy's stock image
 handles certificates and WebSocket upgrades with little operational overhead.
 There is no route to OBS, stats WebSocket, MediaMTX API/metrics or raw HLS.
