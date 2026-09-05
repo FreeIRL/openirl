@@ -4,6 +4,7 @@ import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
 import { Readable } from "node:stream";
+import { IngestRecovery } from "./recovery.js";
 import { ObsClient } from "./obs-client.js";
 
 export const settings = {
@@ -13,6 +14,7 @@ export const settings = {
   bindHost: process.env.BIND_HOST ?? "127.0.0.1",
   controlToken: process.env.OPENIRL_CONTROL_TOKEN ?? "",
   obsUrl: process.env.OBS_WEBSOCKET_URL ?? "ws://127.0.0.1:4455",
+  obsIngestSource: (process.env.OBS_INGEST_SOURCE ?? "").trim(),
   obsIngestAudioSource: (process.env.OBS_INGEST_AUDIO_SOURCE ?? "").trim(),
   obsPassword: process.env.OBS_WEBSOCKET_PASSWORD ?? "",
   previewUpstreamUrl: process.env.PREVIEW_UPSTREAM_URL ?? "http://127.0.0.1:8888",
@@ -51,6 +53,15 @@ async function previewStatus() {
     return { available: false, state: "offline", url: null, format: "hls", note: error instanceof Error ? error.message : String(error) };
   }
 }
+
+export const recovery = new IngestRecovery({
+  obs: obsClient, source: () => settings.obsIngestSource, feedId: () => settings.feedId,
+  telemetry: async () => {
+    const [feed, health] = await Promise.all([upstream(`/api/v1/feeds/${encodeURIComponent(settings.feedId)}`), upstream("/healthz")]);
+    return { feed, health };
+  },
+  preview: previewStatus,
+});
 
 async function proxyPreview(request, response, pathname, search) {
   const suffix = pathname.slice(`${previewPublicPath}/`.length);
@@ -93,6 +104,14 @@ async function readJson(request) {
 
 async function control(request, response, pathname) {
   if (!authorized(request)) return json(response, 401, { error: "valid control token required" });
+  if (pathname === "/api/v1/control/ingest/fix") {
+    try {
+      const body = await readJson(request);
+      if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length) throw new Error();
+    } catch { return json(response, 400, { error: "Recovery accepts no parameters; source is configured server-side" }); }
+    const result = await recovery.run();
+    return json(response, 200, result);
+  }
   if (!obsClient.snapshot().connected) return json(response, 503, { error: "OBS is not connected" });
   try {
     if (pathname === "/api/v1/control/scene") {
@@ -116,7 +135,8 @@ async function control(request, response, pathname) {
 export async function dashboardStatus() {
   const checkedAt = Date.now();
   const obs = obsClient.snapshot();
-  const [preview, audioState] = await Promise.all([previewStatus(), obsClient.ingestAudioStatus(settings.obsIngestAudioSource)]);
+  const [preview, audioState, recoveryState] = await Promise.all([previewStatus(), obsClient.ingestAudioStatus(settings.obsIngestAudioSource), recovery.status()]);
+  const ingestRecovery = { ...recoveryState, enabled: recoveryState.enabled && Boolean(settings.controlToken), reason: !settings.controlToken ? "Set OPENIRL_CONTROL_TOKEN to enable recovery" : recoveryState.reason };
   const audio = { ...audioState, enabled: audioState.healthy && Boolean(settings.controlToken),
     reason: !settings.controlToken ? "Set OPENIRL_CONTROL_TOKEN to enable audio controls" : audioState.reason };
   try {
@@ -138,6 +158,7 @@ export async function dashboardStatus() {
       program: { scene: obs.scene, state: obs.connected ? (obs.streaming ? "Live" : "Stopped") : null, streaming: obs.streaming },
       preview,
       audio,
+      recovery: ingestRecovery,
       links: null,
     };
   } catch (error) {
@@ -155,6 +176,7 @@ export async function dashboardStatus() {
       program: { scene: obs.scene, state: obs.connected ? (obs.streaming ? "Live" : "Stopped") : null, streaming: obs.streaming },
       preview,
       audio,
+      recovery: ingestRecovery,
       links: null,
     };
   }

@@ -76,3 +76,22 @@ test("audio routes require token, reject input selection, and use server mapping
     settings.controlToken=old.token; settings.obsIngestAudioSource=old.source; obsClient.state=old.state; obsClient.request=old.request;
   }
 });
+
+test("Fix requires token, rejects all source parameters, and diagnoses disconnected OBS", async () => {
+  const previous=settings.controlToken;
+  settings.controlToken="fix-token";
+  const url="/api/v1/control/ingest/fix", headers={"x-openirl-control-token":"fix-token"};
+  try {
+    for (const token of [undefined,"wrong"]) assert.equal((await request(url,{method:"POST",headers:token?{"x-openirl-control-token":token}:{}})).statusCode,401);
+    for (const body of ['{"inputName":"arbitrary"}', '[]', 'null', 'false', '{', 'x'.repeat(4097)]) assert.equal((await request(url,{method:"POST",headers,body})).statusCode,400);
+    const result=(await request(url,{method:"POST",headers})).json();
+    assert.equal(result.state,"failed");
+    assert.equal(result.actions.length,0);
+    assert.ok(result.checks.some(check=>check.id==="obs"&&!check.ok));
+    settings.controlToken="";
+    assert.equal((await request(url,{method:"POST",headers})).statusCode,401);
+    const status=(await request("/api/v1/dashboard/status")).json();
+    assert.equal(status.recovery.enabled,false);
+    assert.doesNotMatch(JSON.stringify(status.recovery),/fix-token/);
+  } finally { settings.controlToken=previous; }
+});

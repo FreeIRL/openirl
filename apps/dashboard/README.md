@@ -24,3 +24,7 @@ npm start --workspace @openirl/dashboard
 ```
 
 Open `http://127.0.0.1:8080`. For LAN or Internet access, keep this service loopback-bound and publish it through an authenticated HTTPS reverse proxy or a private VPN; do not change the Compose binding to `0.0.0.0` without an access-control layer.
+
+## Feed 1 Fix / Recovery
+
+See [the recovery contract and mini-PC validation guide](../../docs/ingest-recovery.md). Configure `OBS_INGEST_SOURCE` independently of the audio mapping. Fix only restarts an active Media Source reporting ERROR, with fresh healthy Feed 1 telemetry and the Live scene already selected. It never changes scenes or restarts services.
