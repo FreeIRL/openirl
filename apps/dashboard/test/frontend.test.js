@@ -10,7 +10,7 @@ test("Fix UI gates token, health and busy state, renders results as text, and fa
     return elements.get(id);
   };
   let fetchImpl = async () => { throw new Error("offline"); };
-  const context = vm.createContext({ document: { querySelector: element, querySelectorAll: () => [] }, fetch: (...args) => fetchImpl(...args), matchMedia: () => ({ matches: false }), setInterval() {}, setTimeout() {}, addEventListener() {}, Date, console });
+  const context = vm.createContext({ document: { querySelector: element, querySelectorAll: () => [] }, fetch: (...args) => fetchImpl(...args), matchMedia: () => ({ matches: false }), setInterval() {}, setTimeout() {}, addEventListener() {}, Date, AbortSignal, console });
   vm.runInContext(await readFile(new URL("../public/app.js", import.meta.url), "utf8"), context);
   await new Promise(resolve => setImmediate(resolve));
   const evaluate = code => vm.runInContext(code, context);
@@ -37,4 +37,8 @@ test("Fix UI gates token, health and busy state, renders results as text, and fa
   await evaluate('refresh()');
   assert.equal(element("#ingest-fix").disabled,true);
   assert.match(element("#recovery-note").textContent,/disabled/);
+  assert.equal(element("#bottom-bitrate").textContent, "—");
+  assert.equal(element("#bottom-bitrate").className, "stale");
+  assert.equal(element("#scene-badge").textContent, "Unavailable");
+  assert.equal(element("#last-update").textContent, "Telemetry unavailable");
 });

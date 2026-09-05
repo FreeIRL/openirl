@@ -153,3 +153,54 @@ test('a stuck disabled publisher does not block polling or scene evaluation', as
   try { await m.poll(); await m.poll(); assert.equal(evaluated, 2); assert.equal(m.polling, false); }
   finally { globalThis.fetch = oldFetch; release?.(); }
 });
+
+test('multi-ingest defaults and connection details preserve HEVC over local SRT', async t => {
+  const r = await fixture(t), m = new MultiIngest(r, {}, { OPENIRL_INGEST_HOST: 'ingest.example.com' });
+  let source;
+  m.snapshots.reader = async url => { source = url; return Buffer.from('frame'); };
+  await m.snapshots.refresh(r.state.feeds[0], { state: 'ONLINE' });
+  assert.equal(source, 'srt://127.0.0.1:8890?streamid=read:live/feed-1');
+  const { Readable } = await import('node:stream');
+  const req = Readable.from([JSON.stringify({ id: 'feed-1' })]); req.method = 'POST';
+  let result;
+  await m.request(req, { writeHead() {}, end: value => { result = JSON.parse(value); } }, new URL('http://localhost/api/v1/control/production/details'), () => true);
+  assert.equal(result.obs.sourceUrl, source);
+});
+
+test('direct profile selection cannot bypass Take Live validation', async t => {
+  const r = await fixture(t), m = new MultiIngest(r, {}, {});
+  const { Readable } = await import('node:stream');
+  const req = Readable.from([JSON.stringify({ id: 'legacy', revision: 0 })]); req.method = 'POST';
+  let status;
+  await m.request(req, { writeHead: code => { status = code; }, end() {} }, new URL('http://localhost/api/v1/control/production/select-profile'), () => true);
+  assert.equal(status, 400); assert.equal(r.state.revision, 0);
+});
+
+test('failed Take Live stays paused and manual scene changes cannot race automation', async t => {
+  const r = await fixture(t), health = new FeedHealth();
+  const obs = { snapshot: () => ({ connected: true, scene: 'Live' }), request: async () => ({ scenes: ['Live', 'Low Bitrate', 'BRB'].map(sceneName => ({ sceneName })) }), setScene: async () => { throw Error('OBS failure'); } };
+  const c = new ProductionController({ registry: r, health, obs, owner: 'openirl' });
+  await assert.rejects(c.take({ id: 'legacy', revision: 0 })); assert.equal(c.paused, true);
+  let release; obs.setScene = () => new Promise(resolve => { release = resolve; });
+  const pending = c.manualScene('BRB');
+  await assert.rejects(c.manualScene('Live'), /busy/);
+  await assert.rejects(c.take({ id: 'legacy', revision: r.state.revision }), /busy/);
+  release(); await pending; assert.equal(c.working, false); assert.equal(c.paused, true);
+});
+
+test('old snapshots remain visible but are explicitly stale', () => {
+  const s = new Snapshots(); s.frames.set('feed-1', { image: Buffer.from('frame'), at: 1000 });
+  assert.equal(s.status('feed-1', 31000).stale, false);
+  assert.equal(s.status('feed-1', 31001).stale, true);
+  assert.equal(s.status('feed-1', 31001).available, true);
+});
+
+test('disable reports saved state and pending disconnect rather than a false failure', async t => {
+  const r = await fixture(t), m = new MultiIngest(r, {}, {});
+  m.disconnect = async () => { throw Error('MediaMTX down'); };
+  const { Readable } = await import('node:stream');
+  const req = Readable.from([JSON.stringify({ id: 'feed-1', enabled: false, confirm: 'feed-1', revision: 0 })]); req.method = 'POST';
+  let status, data;
+  await m.request(req, { writeHead: code => { status = code; }, end: value => { data = JSON.parse(value); } }, new URL('http://localhost/api/v1/control/production/update-feed'), () => true);
+  assert.equal(status, 200); assert.equal(data.feeds[0].enabled, false); assert.match(data.warning, /disconnect pending/);
+});

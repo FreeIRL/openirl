@@ -42,9 +42,16 @@ export class ProductionController {
       const scenes = await this.obs.request('GetSceneList');
       if (![p.scene, p.lowScene, p.offlineScene].every(s => scenes.scenes.some(item => item.sceneName === s))) throw new Error('Create all profile scenes in OBS first');
       await this.registry.change('select-profile', body);
-      this.paused = false;
-      await this.apply(p); this.candidate = null;
+      this.paused = true;
+      await this.apply(p); this.candidate = null; this.paused = false;
     } finally { this.working = false; }
+  }
+  async manualScene(scene) {
+    if (this.working) throw new Error('Scene controller busy; wait before changing scenes');
+    this.working = true;
+    this.paused = true;
+    this.candidate = null;
+    try { await this.obs.setScene(scene); } finally { this.working = false; }
   }
   async apply(p) {
     const state = profileHealth(p, this.health.states).state;

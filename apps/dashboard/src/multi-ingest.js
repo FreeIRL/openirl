@@ -24,7 +24,7 @@ export class MultiIngest {
   }
   constructor(registry, obs, env = {}) {
     this.registry = registry; this.env = env; this.trackers = new Map(); this.health = new FeedHealth();
-    this.snapshots = new Snapshots({ baseUrl: env.OPENIRL_SNAPSHOT_SOURCE || 'rtmp://127.0.0.1:1935' });
+    this.snapshots = new Snapshots({ baseUrl: env.OPENIRL_SNAPSHOT_SOURCE || 'srt://127.0.0.1:8890?streamid=read:' });
     this.controller = new ProductionController({ registry, health: this.health, obs, owner: env.OPENIRL_AUTOMATION_OWNER || 'noalbs' });
     this.api = env.OPENIRL_MEDIAMTX_API_URL || 'http://127.0.0.1:9997'; this.polling = false; this.reconciling = false; this.reconcileIndex = 0; this.error = 'Waiting for telemetry';
   }
@@ -112,10 +112,11 @@ export class MultiIngest {
     if (!authorized(req)) { reply(res, 401, { error: 'Valid control token required' }); return true; }
     try {
       const body = await readBody(req), action = url.pathname.split('/').at(-1);
+      if (action === 'select-profile') throw new Error('Use Take Live to validate scenes and select a profile');
       if (action === 'details') {
         const feed = this.registry.state.feeds.find(f => f.id === body.id);
         if (!feed) throw new Error('Feed not found');
-        reply(res, 200, { ...connectionDetails(feed, this.env.OPENIRL_INGEST_HOST), obs: { sourceUrl: `rtmp://127.0.0.1:1935/${feed.path}` } });
+        reply(res, 200, { ...connectionDetails(feed, this.env.OPENIRL_INGEST_HOST), obs: { sourceUrl: `srt://127.0.0.1:8890?streamid=read:${feed.path}` } });
       } else if (action === 'refresh') {
         const feed = this.registry.state.feeds.find(f => f.id === body.id);
         if (!feed) throw new Error('Feed not found');
@@ -127,12 +128,18 @@ export class MultiIngest {
         if (['delete-feed', 'rotate-feed'].includes(action)) {
           const feed = this.registry.state.feeds.find(f => f.id === body.id);
           if (!feed || feed.enabled) throw new Error('Disable the feed first');
+          if (body.revision !== this.registry.state.revision || body.confirm !== feed.id) throw new Error('Reload and confirm the feed ID before changing it');
           await this.disconnect(feed);
         }
         await this.registry.change(action, body);
         const feed = this.registry.state.feeds.find(f => f.id === body.id);
-        if (feed && !feed.enabled) { this.health.sample(feed, null); await this.disconnect(feed); }
-        reply(res, 200, this.status());
+        let warning;
+        if (feed && !feed.enabled) {
+          this.health.sample(feed, null);
+          try { await this.disconnect(feed); }
+          catch { warning = 'Feed disabled and saved; publisher disconnect pending. Automatic retries will continue.'; }
+        }
+        reply(res, 200, { ...this.status(), ...(warning ? { warning } : {}) });
       }
     } catch (error) { reply(res, 400, { error: error.message }); }
     return true;

@@ -31,8 +31,8 @@ export class IngestRecovery {
     } catch {
       for (const id of ["stats", "mediamtx", "feed"]) add(id, false, "Feed telemetry unavailable; no recovery writes allowed");
     }
-    try { previewHealthy = (await this.preview()).available === true; } catch { /* sanitized below */ }
-    add("preview", previewHealthy, previewHealthy ? "HLS playlist available (does not verify decoded video)" : "HLS unavailable; check publisher codecs and MediaMTX");
+    try { const preview = await this.preview(); previewHealthy = preview.available === true && !preview.stale; } catch { /* sanitized below */ }
+    add("preview", previewHealthy, previewHealthy ? "Ingest preview available (does not verify OBS output)" : "Ingest preview unavailable or stale; check publisher and MediaMTX");
     try {
       const version = await this.obs.request("GetVersion");
       const supported = requiredRequests.every(name => version.availableRequests?.includes(name));
@@ -84,7 +84,7 @@ export class IngestRecovery {
       let diagnosis = await this.diagnose();
       result.checks = diagnosis.checks;
       if (!diagnosis.enabled) return finish("failed", diagnosis.reason);
-      if (diagnosis.mediaState === PLAYING) return finish(diagnosis.previewHealthy ? "no_action_needed" : "failed", diagnosis.previewHealthy ? "Feed 1 is playing; no action needed" : "OBS is playing but HLS is unavailable; no safe server repair available");
+      if (diagnosis.mediaState === PLAYING) return finish(diagnosis.previewHealthy ? "no_action_needed" : "failed", diagnosis.previewHealthy ? "Feed 1 is playing; no action needed" : "OBS is playing but ingest preview is unavailable or stale; no safe server repair available");
       // Repeat all guards immediately before the only mutation; scene ownership remains with NOALBS/operator.
       diagnosis = await this.diagnose();
       result.checks.push(...diagnosis.checks.map(check => ({ ...check, phase: "before_action" })));
@@ -99,7 +99,7 @@ export class IngestRecovery {
         result.checks.push(...after.checks.map(check => ({ ...check, phase: `verify_${attempt + 1}` })));
         if (after.enabled && after.mediaState === PLAYING && after.previewHealthy) {
           action.success = true;
-          return finish("recovered", "Feed 1 media input restarted; OBS playing and HLS available");
+          return finish("recovered", "Feed 1 media input restarted; OBS playing and ingest preview available");
         }
         if (!after.enabled) break;
       }

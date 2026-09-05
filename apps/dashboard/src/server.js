@@ -129,8 +129,8 @@ async function control(request, response, pathname) {
     if (pathname === "/api/v1/control/scene") {
       const { scene } = await readJson(request);
       if (!allowedScenes.has(scene)) return json(response, 400, { error: "scene must be Live, Low Bitrate, or BRB" });
-      if (multiIngest) multiIngest.controller.paused = true;
-      await obsClient.setScene(scene);
+      if (multiIngest) await multiIngest.controller.manualScene(scene);
+      else await obsClient.setScene(scene);
     } else if (pathname === "/api/v1/control/ingest/mute" || pathname === "/api/v1/control/ingest/unmute") {
       const body = await readJson(request);
       if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length) {
@@ -216,7 +216,12 @@ export async function handleRequest(request, response) {
 }
 
 export function createServer() {
-  return http.createServer(handleRequest);
+  return http.createServer((request, response) => {
+    handleRequest(request, response).catch(() => {
+      if (response.headersSent) response.destroy();
+      else json(response, 500, { error: "Dashboard request failed" });
+    });
+  });
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

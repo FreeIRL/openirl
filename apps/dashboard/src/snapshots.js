@@ -65,11 +65,12 @@ export class Snapshots {
     this.running = new Set();
   }
 
-  status(id) {
+  status(id, now = Date.now()) {
     const frame = this.frames.get(id);
 
     return {
       available: Boolean(frame),
+      stale: Boolean(frame && now - frame.at > 30000),
       format: 'jpeg',
       capturedAt: frame?.at || null,
       url: frame ? `/api/v1/snapshots/${id}?v=${frame.at}` : null,
