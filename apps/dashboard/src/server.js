@@ -50,7 +50,7 @@ async function previewStatus() {
     if (!response.ok) return { available: false, state: "offline", url: null, format: "hls", note: "Feed 1 HLS playlist is not ready" };
     return { available: true, state: "available", url: `${previewPublicPath}/index.m3u8`, format: "hls", note: "Live HLS preview (H.264/AAC)" };
   } catch (error) {
-    return { available: false, state: "offline", url: null, format: "hls", note: error instanceof Error ? error.message : String(error) };
+    return { available: false, state: "offline", url: null, format: "hls", note: "Feed 1 preview source unavailable" };
   }
 }
 

@@ -34,8 +34,8 @@ test("SRTLA Compose profile forwards to MediaMTX without replacing direct ingest
   assert.match(compose, /profiles: \["srtla"\]/);
   assert.match(compose, /- mediamtx\n\s+- --srt_port\n\s+- "8890"/);
   assert.match(compose, /- "5000:5000\/udp"/);
-  assert.match(compose, /- "1935:1935"/);
-  assert.match(compose, /- "8890:8890\/udp"/);
+  assert.match(compose, /- "127\.0\.0\.1:1935:1935"/);
+  assert.match(compose, /- "127\.0\.0\.1:8890:8890\/udp"/);
 });
 
 test("SRTLA image pins upstream and initializes its build dependency", async () => {

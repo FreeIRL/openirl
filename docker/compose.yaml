@@ -7,8 +7,8 @@ services:
       MTX_AUTHINTERNALUSERS_0_PASS: ${FEED_1_PASSWORD_HASH:?Set FEED_1_PASSWORD_HASH to the existing sha256 hash in .env}
     restart: unless-stopped
     ports:
-      - "1935:1935"
-      - "8890:8890/udp"
+      - "127.0.0.1:1935:1935"
+      - "127.0.0.1:8890:8890/udp"
       # HLS playback is private to the host and proxied narrowly by dashboard.
       - "127.0.0.1:8888:8888"
     expose:

@@ -1,0 +1,27 @@
+# Ubuntu/Linux only. Use together with compose.yaml and --env-file .env.
+services:
+  caddy:
+    image: caddy:2.11.4-alpine
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      OPENIRL_DOMAIN: ${OPENIRL_DOMAIN:?Set OPENIRL_DOMAIN to a hostname only}
+      OPENIRL_AUTH_USER: ${OPENIRL_AUTH_USER:?Set OPENIRL_AUTH_USER}
+      OPENIRL_AUTH_HASH: ${OPENIRL_AUTH_HASH:?Set OPENIRL_AUTH_HASH to a single-quoted bcrypt hash}
+    volumes:
+      - ../integrations/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  caddy_data:
+  caddy_config:

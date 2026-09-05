@@ -1,0 +1,31 @@
+{
+	# Do not create another host-accessible control API. Reload via restart.
+	admin off
+	# TCP only: no extra UDP 443 requirement.
+	servers {
+		protocols h1 h2
+	}
+}
+
+https://{$OPENIRL_DOMAIN} {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+		>Cache-Control "no-store"
+		-Server
+	}
+	# Applies to everything: HTML, status, controls, playlists and segments.
+	basic_auth {
+		{$OPENIRL_AUTH_USER} {$OPENIRL_AUTH_HASH}
+	}
+	reverse_proxy 127.0.0.1:8080 {
+		# Outer credentials never reach the app. The separate control token does.
+		header_up -Authorization
+		# Preserve streaming / WebSocket behavior; no response buffering.
+		flush_interval -1
+	}
+}

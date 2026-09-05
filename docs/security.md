@@ -12,7 +12,7 @@ The completed system will handle stream keys, OBS control, and chat credentials.
 - Rate-limit Twitch commands and keep their permissions narrower than dashboard controls.
 - Use different random values for `OBS_WEBSOCKET_PASSWORD` and `OPENIRL_CONTROL_TOKEN`. The latter is required on every mutating dashboard request.
 
-Production deployment is out of scope until the project has a threat model, authenticated control API, credentialed publishing, and a tested hardening guide.
+For the single-operator HTTPS deployment, follow [Secure remote access](remote-access.md). Outer authentication protects reads and preview; the independent control token still protects every mutation.
 
 ## Validated single-host firewall baseline
 
@@ -32,7 +32,7 @@ Open a second SSH session before closing the first. The router should have one U
 
 Do **not** forward ports 1935, 8890, 4455, 8080, 8888, 9090, 9997, or 9998. Compose binds dashboard port 8080, HLS playback port 8888, and stats port 9090 to loopback. The browser receives only the `live/feed-1` HLS assets through the dashboard's same-origin preview proxy; MediaMTX control and ingest endpoints are not proxied.
 
-On the single-host Ubuntu deployment, the dashboard container uses host networking solely to connect to OBS at `127.0.0.1:4455`; its HTTP listener is explicitly bound to `127.0.0.1:8080`. Do not change either bind address to `0.0.0.0`. Remote operator access should continue through the documented SSH tunnel or a private authenticated proxy/VPN.
+On the single-host Ubuntu deployment, the dashboard container uses host networking solely to connect to OBS at `127.0.0.1:4455`; its HTTP listener is explicitly bound to `127.0.0.1:8080`. Do not change either bind address to `0.0.0.0`. Remote operator access uses the documented SSH tunnel or the [authenticated HTTPS/VPN paths](remote-access.md).
 
 ## Ingest credential
 
@@ -45,3 +45,5 @@ publish:live/feed-1:openirl-feed-1:YOUR_SECRET
 Generate a unique value at deployment time, do not paste it into issue reports or logs, and never add the completed stream ID to this repository. The checked-in examples use placeholders only. Per-link SRTLA telemetry is not authentication and is not implemented yet.
 
 The checked-in Feed 1 publish rules now require the existing hash via `FEED_1_PASSWORD_HASH`. Follow [the migration guide](feed-auth-and-audio-upgrade.md) before recreating MediaMTX. Anonymous publishing is disabled. OBS Mute/Unmute controls target only `OBS_INGEST_AUDIO_SOURCE` and require the control token.
+
+Docker-published ports can bypass UFW. Compose now binds direct RTMP 1935 and SRT 8890 to loopback as well; container-to-container SRTLA delivery still uses `mediamtx:8890`. Recreate MediaMTX to apply this change (brief ingest interruption). Audit local overrides and IPv6, use a maintained Docker Engine (28 or newer for the localhost publishing isolation fix), and test from another machine. Never rely on UFW alone to hide a wildcard Docker publication. Public HTTPS adds only TCP 80/443; Caddy uses host networking, so those listeners pass through the host firewall.

@@ -3,17 +3,21 @@
 OpenIRL is an early-stage, self-hosted toolkit for resilient IRL livestreaming. MediaMTX carries contribution feeds, OBS produces the program output, and OpenIRL supplies the health data and control services around them.
 
 > [!WARNING]
-> This repository is not a complete streaming system. The MediaMTX development configuration and `stats-bridge` service are runnable; the remaining components are design work and have no implementation yet.
+> This repository is not a complete streaming system. The single-feed ingest, telemetry and dashboard are runnable; multi-feed management, clips and Twitch commands remain planned.
 
 ## What works today
 
-- A version-pinned MediaMTX container accepts direct SRT and RTMP publishers.
+- A version-pinned MediaMTX container accepts local SRT and RTMP publishers; remote ingress uses SRTLA UDP 5000.
 - `stats-bridge` polls MediaMTX metrics and exposes feed state over HTTP and WebSocket.
 - A NOALBS example consumes the bridge's feed statistics.
 - A responsive operator dashboard presents Feed 1 telemetry, a private live HLS preview, and guarded OBS scene/stream controls.
 - Tests cover Prometheus parsing and bitrate calculation.
 
 The current path is deliberately limited to one feed (`feed-1`). SRTLA reception and the loopback-only dashboard are runnable. The dashboard backend supports a narrow token-protected OBS control API; multi-feed management, clip playback, and Twitch commands remain planned work. See [Phase 1](docs/phase-1.md) for the working development path.
+
+## Remote dashboard
+
+For authenticated HTTPS on a phone, follow [Secure remote access](docs/remote-access.md). The optional Caddy stack keeps the dashboard on `127.0.0.1:8080`, adds an outer login, and preserves the separate mutation token. Public, LAN-only and CGNAT/private VPN paths are documented.
 
 ## Target system
 
