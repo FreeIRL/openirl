@@ -22,7 +22,7 @@ test('feed health keeps updating while edits stay intact, and network failure is
   const root = new Element('section'), token = new Element('input');
   const data = { revision: 0, automationOwner: 'openirl', profiles: [], feeds: [{ id: 'feed-1', name: 'Main', type: 'mobile', protocols: ['srtla'], enabled: true, health: { state: 'ONLINE', telemetryFresh: true, bitrate: 2000 }, preview: { available: false } }] };
   let offline = false;
-  const context = vm.createContext({ document: { querySelector: s => s === '#feed-manager' ? root : token, createElement: tag => new Element(tag), addEventListener() {}, activeElement: null }, fetch: async () => { if (offline) throw Error('Network lost'); return { ok: true, headers: { get: () => 'application/json' }, json: async () => structuredClone(data) }; }, AbortSignal, Date, setInterval() {} });
+  const context = vm.createContext({ document: { querySelector: s => s === '#feed-manager' ? root : token, createElement: tag => new Element(tag), addEventListener() {}, dispatchEvent() {}, activeElement: null }, fetch: async () => { if (offline) throw Error('Network lost'); return { ok: true, headers: { get: () => 'application/json' }, json: async () => structuredClone(data) }; }, AbortSignal, Date, Event, setInterval() {} });
   vm.runInContext(await readFile(new URL('../public/feeds.js', import.meta.url), 'utf8'), context);
   await new Promise(resolve => setImmediate(resolve));
   assert.match(root.querySelector('[data-health]').textContent, /ONLINE/);
@@ -39,4 +39,20 @@ test('feed health keeps updating while edits stay intact, and network failure is
   offline = true; await vm.runInContext('refresh()', context);
   assert.match(root.querySelector('[data-health]').textContent, /Telemetry unavailable/);
   assert.ok(root.querySelectorAll('[data-control]').every(n => n.disabled));
+});
+
+test('feeds and profiles render in separate route panels and publish updates', async () => {
+  const root = new Element('section'), elements = new Map(); let updates = 0;
+  const data = { revision: 0, automationOwner: 'openirl', feeds: [], profiles: [] };
+  const context = vm.createContext({ document: {
+    querySelector: s => { if (s === '#feed-manager') return root; if (!elements.has(s)) elements.set(s, new Element('div')); return elements.get(s); },
+    createElement: tag => new Element(tag), addEventListener() {}, dispatchEvent(event) { if(event.type === 'pagesupdated') updates++; }, activeElement: null
+  }, fetch: async () => ({ok:true,headers:{get:()=> 'application/json'},json:async()=>data}), AbortSignal, Date, Event, setInterval() {} });
+  vm.runInContext(await readFile(new URL('../public/feeds.js', import.meta.url), 'utf8'), context);
+  await new Promise(resolve => setImmediate(resolve));
+  const panels = root.children.filter(n => n.dataset.page);
+  assert.deepEqual(panels.map(n => n.dataset.page), ['feeds', 'production']);
+  assert.match(panels[0].querySelector('summary').textContent, /Add feed/);
+  assert.match(panels[1].querySelector('summary').textContent, /Add production profile/);
+  assert.equal(updates, 1);
 });

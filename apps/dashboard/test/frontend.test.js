@@ -19,6 +19,15 @@ test("Fix UI gates token, health and busy state, renders results as text, and fa
   element("#control-token").value="test-token";
   element("#control-token").input();
   assert.equal(element("#ingest-fix").disabled, false);
+  evaluate('controlsAvailable=true;streamingState=true;audioState={enabled:true,muted:false};updateControls()');
+  assert.equal(element('#emergency-stop').disabled, false);
+  assert.equal(element('#emergency-mute').disabled, false);
+  evaluate('busy=true;updateControls()');
+  assert.equal(element('#emergency-stop').disabled, true);
+  assert.equal(element('#emergency-mute').disabled, true);
+  evaluate('busy=false;streamingState=false;audioState={enabled:true,muted:true};updateControls()');
+  assert.equal(element('#emergency-stop').disabled, true);
+  assert.equal(element('#emergency-mute').disabled, true);
   let release;
   fetchImpl=async (url, options)=> {
     assert.equal(url,"/api/v1/control/ingest/fix");

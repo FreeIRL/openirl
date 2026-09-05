@@ -1,4 +1,5 @@
 const root = document.querySelector('#feed-manager');
+const historyEntries = []; let lastHealthKey = '';
 let state, refreshing = false, actionBusy = false, reachable = false;
 const el = (tag, text) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = text; return node; };
 const note = el('p'); note.setAttribute('role', 'status');
@@ -49,9 +50,13 @@ function profileForm(profile) {
   }); return form;
 }
 function render() {
-  root.hidden = false; root.replaceChildren(el('h2', 'Feeds and production profiles'), note);
-  const automation = el('p', `Scene automation: ${state.automationOwner}${state.automationPaused ? ' (paused — Take Live to resume)' : ''}. ${state.error || ''}`); automation.dataset.automation = 'true'; root.append(automation);
-  const grid = el('div'); grid.className = 'feed-manager-grid'; root.append(grid);
+  root.hidden = false; root.replaceChildren(note);
+  const feedsPage = el('section'); feedsPage.dataset.page = 'feeds';
+  const productionPage = el('section'); productionPage.dataset.page = 'production';
+  feedsPage.append(el('h2', 'Feeds')); productionPage.append(el('h2', 'Production profiles'));
+  root.append(feedsPage, productionPage);
+  const automation = el('p', `Scene automation: ${state.automationOwner}${state.automationPaused ? ' (paused — Take Live to resume)' : ''}. ${state.error || ''}`); automation.dataset.automation = 'true'; productionPage.append(automation);
+  const grid = el('div'); grid.className = 'feed-manager-grid'; feedsPage.append(grid);
   for (const f of state.feeds) {
     const card = el('article'); card.className = 'card card-body'; card.dataset.feedId = f.id; card.append(el('h3', f.name)); const health = el('p'); health.dataset.health = 'true'; card.append(health);
     const image = el('img'); image.dataset.preview = 'true'; image.alt = `Last ingest frame from ${f.name}`; image.hidden = true; const age = el('p'); age.dataset.age = 'true'; card.append(image, age);
@@ -79,16 +84,29 @@ function render() {
       button('Delete', async () => { if (confirm(`Delete ${f.name}? Remove it from profiles first.`)) await action('delete-feed', { id: f.id, confirm: f.id }); }));
     grid.append(card);
   }
-  const add = el('details'); add.append(el('summary', 'Add feed'), feedForm()); root.append(add);
+  const add = el('details'); add.append(el('summary', 'Add feed'), feedForm()); feedsPage.append(add);
   for (const p of state.profiles) {
     const row = el('article'); row.dataset.profileId = p.id; row.className = 'card card-body'; row.append(el('h3', `${p.name}${p.id === state.selectedProfileId ? ' · Selected' : ''}`),
       el('p', `${p.scene}: ${p.health.state} · ${p.health.healthy}/${p.minimumHealthy} healthy feeds required`), button('Take Live', () => action('take', { id: p.id })));
     if (p.id !== state.selectedProfileId) { const edit = el('details'); edit.append(el('summary', 'Edit profile'), profileForm(p)); row.append(edit, button('Delete profile', () => action('delete-profile', { id: p.id }))); }
-    root.append(row);
+    productionPage.append(row);
   }
-  const addProfile = el('details'); addProfile.append(el('summary', 'Add production profile'), profileForm()); root.append(addProfile); updateLive(state);
+  const addProfile = el('details'); addProfile.append(el('summary', 'Add production profile'), profileForm()); productionPage.append(addProfile); updateLive(state);
+  document.dispatchEvent(new Event('pagesupdated'));
 }
 function updateLive(data) {
+  const healthKey = JSON.stringify([data.feeds.map(f => [f.id, f.health?.state, f.health?.telemetryFresh]), data.profiles.map(p => [p.id, p.health.state]), data.error]);
+  if (healthKey !== lastHealthKey) {
+    lastHealthKey = healthKey;
+    historyEntries.unshift(`${new Date().toLocaleTimeString()}: ${data.feeds.map(f => `${f.name}: ${f.health?.telemetryFresh ? f.health.state : 'Telemetry unavailable'}`).join('; ')}. ${data.error || ''}`);
+    historyEntries.splice(30);
+    const list = document.querySelector('#production-history'); list.replaceChildren(...historyEntries.map(text => el('li', text)));
+  }
+  const selected = data.profiles.find(p => p.id === data.selectedProfileId);
+  document.querySelector('#overview-profile').textContent = selected ? `Active profile: ${selected.name} · ${selected.health.state}` : 'No production profile selected';
+  document.querySelector('#overview-health').textContent = data.feeds.map(f => `${f.name}: ${f.health?.telemetryFresh ? f.health.state : 'Telemetry unavailable'} · ${Math.round(f.health?.bitrate || 0)} kbps`).join(' / ');
+  document.querySelector('#automation-summary').textContent = `Scene automation: ${data.automationOwner}${data.automationPaused ? ' (paused)' : ''}`;
+
   for (const card of root.querySelectorAll('[data-feed-id]')) {
     const f = data.feeds.find(f => f.id === card.dataset.feedId);
     const status = card.querySelector('[data-health]');
@@ -117,13 +135,13 @@ async function refresh(force = false) {
   refreshing = true;
   try {
     const response = await fetch('/api/v1/production', { cache: 'no-store', signal: AbortSignal.timeout(8000) });
-    if (response.status === 404 && !state) return;
+    if (response.status === 404 && !state) { root.hidden = false; note.textContent = 'Dynamic feeds and production profiles are not enabled on this server.'; document.querySelector('#overview-profile').textContent = 'Legacy single-feed mode'; document.querySelector('#automation-summary').textContent = 'Dynamic production automation is not enabled'; document.querySelector('#overview-health').textContent = 'Main ingest status below'; document.dispatchEvent(new Event('pagesupdated')); return; }
     if (!response.ok || response.redirected || !(response.headers.get('content-type') || '').includes('application/json')) throw new Error('Feed status unavailable. Check your connection or reload to sign in.');
     const data = await response.json(); reachable = true;
     if (force || !state || (!actionBusy && !root.querySelector('details[open]') && !root.querySelector('[data-credentials]') && !root.contains(document.activeElement))) { state = data; render(); }
     else updateLive(data);
   } catch (error) {
-    reachable = false; note.textContent = error.message;
+    reachable = false; note.textContent = error.message; document.querySelector('#overview-profile').textContent = 'Production status unavailable'; document.querySelector('#overview-health').textContent = 'Ingest health unavailable'; document.querySelector('#automation-summary').textContent = 'Automation status unavailable';
     for (const status of root.querySelectorAll('[data-health]')) status.textContent = 'Telemetry unavailable — displayed preview may be stale';
     for (const age of root.querySelectorAll('[data-age]')) age.textContent = 'Preview status unavailable';
     for (const row of root.querySelectorAll('[data-profile-id]')) row.querySelector('p').textContent = 'Production health unavailable';

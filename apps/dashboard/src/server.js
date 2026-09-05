@@ -159,6 +159,7 @@ export async function dashboardStatus() {
     ]);
     return {
       checkedAt,
+      configuration: { multiIngest: Boolean(multiIngest), ingestHost: /^[a-zA-Z0-9.-]+$/.test(process.env.OPENIRL_INGEST_HOST || '') ? process.env.OPENIRL_INGEST_HOST : null },
       feed,
       services: {
         statsBridge: { state: health.status === "ok" ? "healthy" : "degraded", source: "live" },
@@ -177,6 +178,7 @@ export async function dashboardStatus() {
   } catch (error) {
     return {
       checkedAt,
+      configuration: { multiIngest: Boolean(multiIngest), ingestHost: /^[a-zA-Z0-9.-]+$/.test(process.env.OPENIRL_INGEST_HOST || '') ? process.env.OPENIRL_INGEST_HOST : null },
       feed: { feed: settings.feedId, connected: false, bitrate: 0, timestamp: 0, error: error instanceof Error ? error.message : String(error) },
       services: {
         statsBridge: { state: "offline", source: "live", note: "Dashboard cannot reach stats-bridge" },
@@ -204,7 +206,7 @@ export async function handleRequest(request, response) {
     if (request.method === "POST" && url.pathname.startsWith("/api/v1/control/")) return control(request, response, url.pathname);
     if (url.pathname.startsWith("/api/") || request.method !== "GET") return json(response, 404, { error: "not found" });
 
-    const requestPath = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
+    const requestPath = ["/", "/overview", "/feeds", "/production", "/obs", "/health", "/settings", "/more"].includes(url.pathname) ? "index.html" : url.pathname.slice(1);
     const safePath = normalize(requestPath).replace(/^(\.\.(\/|\\|$))+/, "");
     try {
       const body = await readFile(join(publicDirectory, safePath));

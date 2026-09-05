@@ -95,3 +95,12 @@ test("Fix requires token, rejects all source parameters, and diagnoses disconnec
     assert.doesNotMatch(JSON.stringify(status.recovery),/fix-token/);
   } finally { settings.controlToken=previous; }
 });
+
+ test("task routes support direct links and preserve API 404 boundaries", async () => {
+ for (const route of ['overview','feeds','production','obs','health','settings','more']) {
+ const response = await request('/'+route);
+ assert.equal(response.statusCode,200); assert.match(response.body,/navigation.js/);
+ }
+ assert.equal((await request('/api/missing')).statusCode,404);
+ assert.equal((await request('/missing')).statusCode,404);
+ });

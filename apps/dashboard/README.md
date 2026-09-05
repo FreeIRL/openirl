@@ -28,3 +28,28 @@ Open `http://127.0.0.1:8080`. For LAN or Internet access, keep this service loop
 ## Feed 1 Fix / Recovery
 
 See [the recovery contract and mini-PC validation guide](../../docs/ingest-recovery.md). Configure `OBS_INGEST_SOURCE` independently of the audio mapping. Fix only restarts an active Media Source reporting ERROR, with fresh healthy Feed 1 telemetry and the Live scene already selected. It never changes scenes or restarts services.
+
+## Operator pages
+
+The dashboard supports direct links to `/overview`, `/feeds`, `/production`,
+`/obs`, `/health` and `/settings`. `/` opens Overview. Mobile navigation uses
+Overview, Feeds, Production, Health and More (`/more`), which links to OBS / Stream
+and Settings. Browser Back/Forward works without restarting polling or clearing
+unsaved feed/profile editors. Reloading clears the in-memory control token.
+
+BRB, mute and confirmed stream stop stay in the sticky emergency bar on every
+page. Expand Operator access to enter the token. These buttons share the existing
+OBS availability, audio mapping, busy-state and token checks. No separate privacy
+command exists; none is invented by this UI. Manual scenes retain the existing
+production automation pause behavior, and Take Live resumes OpenIRL automation.
+
+Feeds owns source configuration and authenticated credential details. Production
+owns profiles and Take Live. Health shows bitrate, services and the most recent
+30 observed changes in each history, held only for this browser session. Missing
+SRTLA metrics are explicitly unavailable. Settings shows a public hostname and
+control availability, never environment dumps or secret values. Advanced changes
+remain server-managed. Existing single-feed installs show an explicit message on
+Feeds/Production when dynamic multi-ingest is disabled.
+
+This is a dashboard refactor only: local-SRT HEVC snapshots, MediaMTX auth,
+Cloudflare proxying, and automation ownership configuration remain unchanged.

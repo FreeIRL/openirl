@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "check": "node --check src/server.js && node --check src/obs-client.js && node --check public/app.js && node --check public/feeds.js && node --test"
+    "check": "node --check src/server.js && node --check src/obs-client.js && node --check public/app.js && node --check public/feeds.js && node --check public/navigation.js && node --test"
   },
   "dependencies": {
     "hls.js": "^1.6.13"
