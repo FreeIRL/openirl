@@ -4,10 +4,10 @@ This setup has been validated end to end: SRT publisher → MediaMTX → `stats-
 
 ## 1. Start the media and health services
 
-From the repository root:
+First configure `.env` using [the Feed 1 authentication guide](feed-auth-and-audio-upgrade.md). From the repository root:
 
 ```sh
-docker compose -f docker/compose.yaml up --build
+docker compose --env-file .env -f docker/compose.yaml up --build
 ```
 
 The public contribution listeners are SRT on UDP 8890 and RTMP on TCP 1935. The MediaMTX API and metrics ports are container-internal; normalized health is available locally on port 9090. MediaMTX HLS playback uses TCP 8888 but Compose binds it to `127.0.0.1` only.
@@ -17,19 +17,15 @@ The public contribution listeners are SRT on UDP 8890 and RTMP on TCP 1935. The 
 Publish SRT to:
 
 ```text
-srt://SERVER_IP:8890?streamid=publish:live/feed-1
+srt://SERVER_IP:8890?streamid=publish:live/feed-1:openirl-feed-1:YOUR_SECRET
 ```
 
-MediaMTX also accepts the standard SRT stream ID form:
-
-```text
-srt://SERVER_IP:8890?streamid=#!::m=publish,r=live/feed-1
-```
+Enter the actual secret only in your sender; never paste the completed URL into logs or shell arguments.
 
 For a first LAN test, an RTMP publisher can use:
 
 ```text
-rtmp://SERVER_IP:1935/live/feed-1
+rtmp://SERVER_IP:1935/live/feed-1?user=openirl-feed-1&pass=YOUR_SECRET
 ```
 
 Do not expose either listener to the internet until per-feed credentials and firewall rules are configured.
@@ -81,8 +77,8 @@ The dashboard is included in the default Compose stack. On the Ubuntu mini PC:
 ```sh
 cd ~/openirl
 git pull --ff-only
-docker compose -f docker/compose.yaml up --build -d
-docker compose -f docker/compose.yaml ps
+docker compose --env-file .env -f docker/compose.yaml up --build -d
+docker compose --env-file .env -f docker/compose.yaml ps
 curl http://127.0.0.1:8080/healthz
 ```
 
@@ -119,9 +115,9 @@ With Feed 1 live, both playlist requests should return success and `.preview.ava
 Start the receiver path with:
 
 ```sh
-docker compose -f docker/compose.yaml --profile srtla up --build -d
+docker compose --env-file .env -f docker/compose.yaml --profile srtla up --build -d
 ```
 
-It accepts SRTLA on UDP 5000 and forwards the reconstructed SRT session to the same MediaMTX `live/feed-1` path. Existing direct SRT and RTMP inputs are unchanged. Configure the SRTLA sender to use stream ID `publish:live/feed-1`.
+It accepts SRTLA on UDP 5000 and forwards the reconstructed SRT session to the same MediaMTX `live/feed-1` path. Existing direct SRT and RTMP inputs are unchanged. Configure the SRTLA sender to use stream ID `publish:live/feed-1:openirl-feed-1:YOUR_SECRET`.
 
 The forwarding and sender-side multi-link aggregation are functional. Per-link receiver telemetry, authentication, and automated sender/source-routing setup are not implemented; see `integrations/srtla/README.md`.

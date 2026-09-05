@@ -1,13 +1,19 @@
-# Development baseline only. Add publish credentials and TLS before exposing it.
+# Feed 1 publishing is credentialed. Compose supplies the existing SHA256 hash.
+# The non-digest fallback can never match a SHA256 password (44 base64 chars).
 logLevel: info
 
 authMethod: internal
 authInternalUsers:
+  - user: openirl-feed-1
+    pass: "sha256:UNCONFIGURED"
+    ips: []
+    permissions:
+      - action: publish
+        path: live/feed-1
   - user: any
     pass:
     ips: []
     permissions:
-      - action: publish
       - action: read
       - action: playback
   - user: any

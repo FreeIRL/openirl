@@ -41,3 +41,6 @@ tmp/
 
 # Container overrides
 docker/compose.override.yaml
+
+# Python validation helpers
+__pycache__/

@@ -43,3 +43,5 @@ publish:live/feed-1:openirl-feed-1:YOUR_SECRET
 ```
 
 Generate a unique value at deployment time, do not paste it into issue reports or logs, and never add the completed stream ID to this repository. The checked-in examples use placeholders only. Per-link SRTLA telemetry is not authentication and is not implemented yet.
+
+The checked-in Feed 1 publish rules now require the existing hash via `FEED_1_PASSWORD_HASH`. Follow [the migration guide](feed-auth-and-audio-upgrade.md) before recreating MediaMTX. Anonymous publishing is disabled. OBS Mute/Unmute controls target only `OBS_INGEST_AUDIO_SOURCE` and require the control token.

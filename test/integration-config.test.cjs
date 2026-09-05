@@ -71,3 +71,20 @@ test("security guide exposes only SRTLA and contains no deployed secret", async 
   assert.match(guide, /Do \*\*not\*\* forward ports 1935, 8890, 4455, 8080, 8888, 9090, 9997, or 9998/);
   assert.match(guide, /YOUR_SECRET/);
 });
+
+test("only the Feed 1 identity has a narrowly scoped publish permission", async () => {
+  const config = await read("integrations/mediamtx/mediamtx.yml");
+  const users = config.split("authInternalUsers:\n")[1].split("\napi:")[0].split(/^  - user: /m).slice(1);
+  assert.equal(users.length, 3);
+  assert.match(users[0], /^openirl-feed-1\n/);
+  assert.match(users[0], /action: publish\n\s+path: live\/feed-1/);
+  assert.match(users[0], /sha256:UNCONFIGURED/);
+  assert.equal((config.match(/action: publish/g)||[]).length, 1);
+  assert.match(users[1], /^any\n/); assert.match(users[1], /action: read/); assert.match(users[1], /action: playback/);
+  assert.doesNotMatch(users[1], /action: (publish|api|metrics)/);
+  assert.match(users[2], /ips: \["127.0.0.1", "::1", "172.16.0.0\/12"\]/);
+  assert.match(users[2], /action: api/); assert.match(users[2], /action: metrics/);
+  const compose = await read("docker/compose.yaml");
+  assert.match(compose, /MTX_AUTHINTERNALUSERS_0_PASS: \$\{FEED_1_PASSWORD_HASH:\?/);
+  assert.match(compose, /OBS_INGEST_AUDIO_SOURCE: \$\{OBS_INGEST_AUDIO_SOURCE:-\}/);
+});

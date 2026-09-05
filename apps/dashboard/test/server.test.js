@@ -40,3 +40,39 @@ test("preview proxy is limited to the configured Feed 1 asset namespace", async 
   assert.equal((await request("/preview/live/feed-1/%2e%2e/secret")).statusCode,404);
   assert.equal((await request("/preview/live/feed-2/index.m3u8")).statusCode,404);
 });
+
+test("audio routes require token, reject input selection, and use server mapping", async () => {
+  const old = { token:settings.controlToken, source:settings.obsIngestAudioSource, state:obsClient.state, request:obsClient.request };
+  const headers={"x-openirl-control-token":"audio-test-token"};
+  settings.controlToken="audio-test-token"; settings.obsIngestAudioSource="Mapped Feed 1";
+  obsClient.state={...old.state, connected:true};
+  let muted=false;
+  const calls=[];
+  obsClient.request=async (type,data)=>{ calls.push([type,data]); if(type==="SetInputMute") muted=data.inputMuted; return {inputMuted:muted}; };
+  try {
+    for(const action of ["mute","unmute"]) {
+      const url=`/api/v1/control/ingest/${action}`;
+      assert.equal((await request(url,{method:"POST"})).statusCode,401);
+      assert.equal((await request(url,{method:"POST",headers:{"x-openirl-control-token":"wrong"}})).statusCode,401);
+      assert.equal(calls.length,0);
+    }
+    assert.equal((await request("/api/v1/control/ingest/mute",{method:"POST",headers,body:'{"inputName":"Other input"}'})).statusCode,400);
+    assert.equal(calls.length,0);
+    for(const action of ["mute","unmute"]) {
+      const result=await request(`/api/v1/control/ingest/${action}`,{method:"POST",headers});
+      assert.equal(result.statusCode,200);
+      assert.equal(result.json().audio.muted,action==="mute");
+    }
+    assert.ok(calls.every(([,data])=>data.inputName==="Mapped Feed 1"));
+    const status=(await request("/api/v1/dashboard/status")).json();
+    assert.equal(status.audio.enabled,true); assert.equal(status.audio.muted,false);
+    assert.doesNotMatch(JSON.stringify(status), /audio-test-token|Mapped Feed 1/);
+    settings.obsIngestAudioSource="";
+    assert.equal((await request("/api/v1/control/ingest/mute",{method:"POST",headers})).statusCode,502);
+    assert.equal((await request("/api/v1/dashboard/status")).json().audio.enabled,false);
+    obsClient.state.connected=false;
+    assert.equal((await request("/api/v1/control/ingest/unmute",{method:"POST",headers})).statusCode,503);
+  } finally {
+    settings.controlToken=old.token; settings.obsIngestAudioSource=old.source; obsClient.state=old.state; obsClient.request=old.request;
+  }
+});

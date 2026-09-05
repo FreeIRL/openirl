@@ -9,8 +9,9 @@ Mutations require `X-OpenIRL-Control-Token` and are restricted to:
 - `POST /api/v1/control/scene` with `{"scene":"Live"}`, `Low Bitrate`, or `BRB`
 - `POST /api/v1/control/stream/start`
 - `POST /api/v1/control/stream/stop`
+- `POST /api/v1/control/ingest/mute` and `/api/v1/control/ingest/unmute` (no parameters)
 
-The UI asks for the token and keeps it only in the password field. It confirms before stopping. Ingest Mute, Unmute, and Fix remain disabled because no safe source mapping exists.
+The UI asks for the token and keeps it only in the password field. It confirms before stopping. Mute/Unmute require a healthy `OBS_INGEST_AUDIO_SOURCE` mapping and report confirmed state in the status response’s `audio` object. Fix remains disabled. See [deployment and validation](../../docs/feed-auth-and-audio-upgrade.md).
 
 Run locally from the repository root:
 

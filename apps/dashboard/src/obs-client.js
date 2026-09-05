@@ -57,6 +57,30 @@ export class ObsClient {
     await this.request("SetCurrentProgramScene", { sceneName });
   }
 
+  async ingestAudioStatus(inputName) {
+    if (!this.state.connected) return { healthy: false, muted: null, reason: "OBS is disconnected" };
+    if (!inputName) return { healthy: false, muted: null, reason: "Set OBS_INGEST_AUDIO_SOURCE to the exact Feed 1 OBS input name" };
+    try {
+      const { inputMuted } = await this.request("GetInputMute", { inputName });
+      if (typeof inputMuted !== "boolean" || !this.state.connected) throw new Error();
+      return { healthy: true, muted: inputMuted, reason: inputMuted ? "Main ingest audio is muted" : "Main ingest audio is unmuted" };
+    } catch {
+      return { healthy: false, muted: null, reason: "Configured OBS audio input is missing, has no audio, or could not be queried" };
+    }
+  }
+
+  async setIngestMuted(inputName, muted) {
+    if (typeof muted !== "boolean") throw new Error("Mute state must be boolean");
+    const before = await this.ingestAudioStatus(inputName);
+    if (!before.healthy) throw new Error(before.reason);
+    // Never toggle or accept a browser-selected input. Revalidate before writing.
+    try { await this.request("SetInputMute", { inputName, inputMuted: muted }); }
+    catch { throw new Error("OBS could not change the configured ingest audio input"); }
+    const after = await this.ingestAudioStatus(inputName);
+    if (!after.healthy || after.muted !== muted) throw new Error("OBS mute state could not be confirmed; refresh status before retrying");
+    return after;
+  }
+
   async startStream() { await this.request("StartStream"); }
   async stopStream() { await this.request("StopStream"); }
 

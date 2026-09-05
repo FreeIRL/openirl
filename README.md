@@ -69,7 +69,7 @@ npm install
 npm run check
 ```
 
-To exercise the media and telemetry path, follow [docs/phase-1.md](docs/phase-1.md). The checked-in MediaMTX configuration has no publisher credentials and must not be exposed to the public internet.
+To exercise the media and telemetry path, follow [docs/phase-1.md](docs/phase-1.md). Feed 1 publishing requires the existing SHA256 hash in `.env`; follow [the authentication upgrade guide](docs/feed-auth-and-audio-upgrade.md) before starting the stack.
 
 ## Design constraints
 
@@ -84,3 +84,5 @@ More detail is available in [Architecture](docs/architecture.md), [Security](doc
 ## License
 
 [MIT](LICENSE). Third-party services and binaries retain their own licenses.
+
+See [Feed 1 authentication and guarded audio upgrade](docs/feed-auth-and-audio-upgrade.md) for required `.env` settings, stash preservation, deployment, and validation commands.

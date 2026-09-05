@@ -13,6 +13,7 @@ export const settings = {
   bindHost: process.env.BIND_HOST ?? "127.0.0.1",
   controlToken: process.env.OPENIRL_CONTROL_TOKEN ?? "",
   obsUrl: process.env.OBS_WEBSOCKET_URL ?? "ws://127.0.0.1:4455",
+  obsIngestAudioSource: (process.env.OBS_INGEST_AUDIO_SOURCE ?? "").trim(),
   obsPassword: process.env.OBS_WEBSOCKET_PASSWORD ?? "",
   previewUpstreamUrl: process.env.PREVIEW_UPSTREAM_URL ?? "http://127.0.0.1:8888",
 };
@@ -98,6 +99,13 @@ async function control(request, response, pathname) {
       const { scene } = await readJson(request);
       if (!allowedScenes.has(scene)) return json(response, 400, { error: "scene must be Live, Low Bitrate, or BRB" });
       await obsClient.setScene(scene);
+    } else if (pathname === "/api/v1/control/ingest/mute" || pathname === "/api/v1/control/ingest/unmute") {
+      const body = await readJson(request);
+      if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length) {
+        return json(response, 400, { error: "Audio controls accept no parameters; the input is configured server-side" });
+      }
+      const audio = await obsClient.setIngestMuted(settings.obsIngestAudioSource, pathname.endsWith("/mute"));
+      return json(response, 200, { ok: true, audio });
     } else if (pathname === "/api/v1/control/stream/start") await obsClient.startStream();
     else if (pathname === "/api/v1/control/stream/stop") await obsClient.stopStream();
     else return json(response, 404, { error: "not found" });
@@ -108,7 +116,9 @@ async function control(request, response, pathname) {
 export async function dashboardStatus() {
   const checkedAt = Date.now();
   const obs = obsClient.snapshot();
-  const preview = await previewStatus();
+  const [preview, audioState] = await Promise.all([previewStatus(), obsClient.ingestAudioStatus(settings.obsIngestAudioSource)]);
+  const audio = { ...audioState, enabled: audioState.healthy && Boolean(settings.controlToken),
+    reason: !settings.controlToken ? "Set OPENIRL_CONTROL_TOKEN to enable audio controls" : audioState.reason };
   try {
     const [feed, health] = await Promise.all([
       upstream(`/api/v1/feeds/${encodeURIComponent(settings.feedId)}`),
@@ -127,6 +137,7 @@ export async function dashboardStatus() {
       controls: { enabled: obs.connected && Boolean(settings.controlToken), reason: !settings.controlToken ? "Set OPENIRL_CONTROL_TOKEN to enable controls" : obs.connected ? "Enter the control token to operate OBS" : "OBS is disconnected" },
       program: { scene: obs.scene, state: obs.connected ? (obs.streaming ? "Live" : "Stopped") : null, streaming: obs.streaming },
       preview,
+      audio,
       links: null,
     };
   } catch (error) {
@@ -143,6 +154,7 @@ export async function dashboardStatus() {
       controls: { enabled: obs.connected && Boolean(settings.controlToken), reason: !settings.controlToken ? "Set OPENIRL_CONTROL_TOKEN to enable controls" : obs.connected ? "Enter the control token to operate OBS" : "OBS is disconnected" },
       program: { scene: obs.scene, state: obs.connected ? (obs.streaming ? "Live" : "Stopped") : null, streaming: obs.streaming },
       preview,
+      audio,
       links: null,
     };
   }
