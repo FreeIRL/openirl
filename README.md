@@ -94,3 +94,7 @@ More detail is available in [Architecture](docs/architecture.md), [Security](doc
 [MIT](LICENSE). Third-party services and binaries retain their own licenses.
 
 See [Feed 1 authentication and guarded audio upgrade](docs/feed-auth-and-audio-upgrade.md) for required `.env` settings, stash preservation, deployment, and validation commands.
+
+## Dynamic multi-ingest (opt-in)
+
+See [the migration guide](docs/multi-ingest.md) for persistent feeds, per-feed protocol credentials, production profiles, a single scene controller and periodic snapshots. The existing stack stays compatible until the multi-ingest Compose overlay is selected.

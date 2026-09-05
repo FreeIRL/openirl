@@ -1,0 +1,49 @@
+# Opt-in migration. Requires Docker Compose 2.24.4+ for !reset/!override.
+# Keep using --env-file .env explicitly. Read docs/multi-ingest.md first.
+services:
+  mediamtx:
+    network_mode: host
+    ports: !reset []
+    expose: !reset []
+    environment:
+      MTX_AUTHMETHOD: http
+      MTX_AUTHHTTPADDRESS: http://127.0.0.1:8081/auth
+      MTX_AUTHHTTPEXCLUDE: '[{"action":"api"},{"action":"metrics"}]'
+      MTX_APIADDRESS: 127.0.0.1:9997
+      MTX_METRICSADDRESS: 127.0.0.1:9998
+      MTX_RTMPADDRESS: ${OPENIRL_RTMP_BIND:-127.0.0.1:1935}
+      MTX_RTMPENCRYPTION: optional
+      MTX_RTMPSADDRESS: ${OPENIRL_RTMPS_BIND:-127.0.0.1:1936}
+      MTX_RTMPSERVERKEY: /certs/server.key
+      MTX_RTMPSERVERCERT: /certs/server.crt
+      MTX_SRTADDRESS: ${OPENIRL_SRT_BIND:-127.0.0.1:8890}
+      MTX_MOQ: "no"
+      MTX_RTSP: "no"
+      MTX_WEBRTC: "no"
+      MTX_HLS: "no"
+      MTX_PLAYBACK: "no"
+    volumes:
+      - ../integrations/mediamtx/mediamtx.multi-ingest.yml:/mediamtx.yml:ro
+      - ${OPENIRL_INGEST_CERT_DIR:?Set OPENIRL_INGEST_CERT_DIR to an absolute TLS certificate directory}:/certs:ro
+  srtla-receiver:
+    network_mode: host
+    ports: !reset []
+    command: !override ["--srtla_port", "5000", "--srt_hostname", "127.0.0.1", "--srt_port", "8890", "--log_level", "info"]
+  stats-bridge:
+    # Keep the legacy bridge available to existing clients; host loopback metrics stay private.
+    network_mode: host
+    ports: !reset []
+    environment:
+      MEDIAMTX_METRICS_URL: http://127.0.0.1:9998/metrics
+      BIND_HOST: 127.0.0.1
+  dashboard:
+    environment:
+      OPENIRL_MULTI_INGEST: "true"
+      OPENIRL_REGISTRY_PATH: /data/registry.json
+      FEED_1_PASSWORD_HASH: ${FEED_1_PASSWORD_HASH:?Preserve the existing feed hash}
+      OPENIRL_INGEST_HOST: ${OPENIRL_INGEST_HOST:?Set your DNS-only ingest hostname}
+      OPENIRL_AUTOMATION_OWNER: ${OPENIRL_AUTOMATION_OWNER:-noalbs}
+    volumes:
+      - multi-ingest-data:/data
+volumes:
+  multi-ingest-data:

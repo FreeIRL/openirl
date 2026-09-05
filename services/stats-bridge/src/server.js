@@ -43,7 +43,7 @@ const server = http.createServer((request, response) => {
 
   if (request.method === "GET" && url.pathname === "/healthz") {
     const fresh =
-      state.timestamp > 0 && Date.now() - state.timestamp <= settings.staleAfterMs;
+      !state.error && state.timestamp > 0 && Date.now() - state.timestamp <= settings.staleAfterMs;
     sendJson(response, fresh ? 200 : 503, {
       status: fresh ? "ok" : "degraded",
       upstream: fresh ? "fresh" : "stale",
@@ -146,7 +146,7 @@ const timer = setInterval(poll, settings.pollIntervalMs);
 timer.unref();
 await poll();
 
-server.listen(settings.port, "0.0.0.0", () => {
+server.listen(settings.port, process.env.BIND_HOST ?? "0.0.0.0", () => {
   console.log(
     `stats bridge listening on :${settings.port} for ${settings.mediaPath}`,
   );

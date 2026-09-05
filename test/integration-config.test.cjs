@@ -88,3 +88,8 @@ test("only the Feed 1 identity has a narrowly scoped publish permission", async 
   assert.match(compose, /MTX_AUTHINTERNALUSERS_0_PASS: \$\{FEED_1_PASSWORD_HASH:\?/);
   assert.match(compose, /OBS_INGEST_AUDIO_SOURCE: \$\{OBS_INGEST_AUDIO_SOURCE:-\}/);
 });
+
+test('multi-ingest overlay isolates the control plane and disables unused media listeners', async () => {
+  const text = await read('docker/compose.multi-ingest.yaml');
+  for (const line of ['MTX_APIADDRESS: 127.0.0.1:9997', 'MTX_METRICSADDRESS: 127.0.0.1:9998', 'MTX_AUTHHTTPADDRESS: http://127.0.0.1:8081/auth', 'MTX_MOQ: "no"', 'MTX_RTSP: "no"', 'MTX_WEBRTC: "no"', 'MTX_HLS: "no"']) assert.ok(text.includes(line), line);
+});

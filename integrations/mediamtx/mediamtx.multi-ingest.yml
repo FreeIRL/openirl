@@ -1,0 +1,15 @@
+# Used only by compose.multi-ingest.yaml. Listener/auth settings come from its environment.
+logLevel: info
+api: yes
+metrics: yes
+rtmp: yes
+srt: yes
+hls: no
+moq: no
+rtsp: no
+webrtc: no
+playback: no
+paths:
+  ~^live/[a-zA-Z0-9_-]+$:
+    source: publisher
+    overridePublisher: no

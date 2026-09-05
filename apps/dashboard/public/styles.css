@@ -5,3 +5,5 @@
 summary:focus-visible,a:focus-visible,button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 .preview{overflow:hidden}.preview:after{display:none}.preview video{width:100%;height:100%;object-fit:contain;background:#111}.preview-empty{position:absolute;inset:0;place-content:center;padding:20px;background:radial-gradient(circle at center,#424a50e8,#252b30f5)}.preview-empty[hidden]{display:none}
+
+.feed-manager-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}#feed-manager form{display:grid;gap:12px;padding:16px}#feed-manager input,#feed-manager select{margin:6px;padding:8px}#feed-manager pre{white-space:pre-wrap;overflow-wrap:anywhere}#feed-manager button{margin:6px;padding:10px}#feed-manager{margin-block:16px}

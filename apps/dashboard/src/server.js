@@ -1,4 +1,6 @@
 import http from "node:http";
+import { MultiIngest } from "./multi-ingest.js";
+export let multiIngest = null;
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,6 +34,15 @@ function json(response, status, body) {
 }
 
 async function upstream(path) {
+  if (multiIngest) {
+    if (path === "/healthz") return { status: multiIngest.error ? "degraded" : "ok", upstream: multiIngest.error ? "stale" : "fresh" };
+    const feed = multiIngest.registry.state.feeds.find(f => path === `/api/v1/feeds/${encodeURIComponent(f.id)}`);
+    if (feed) {
+      const state = multiIngest.health.states.get(feed.id);
+      return { type: "stats", feed: feed.id, streamId: `publish/${feed.path}`, connected: state?.connected || false,
+        bitrate: state?.bitrate || 0, timestamp: state?.timestamp || 0, ...(state?.telemetryFresh ? {} : { error: "Telemetry unavailable" }) };
+    }
+  }
   const response = await fetch(`${settings.statsBridgeUrl}${path}`, { signal: AbortSignal.timeout(2500) });
   if (!response.ok) throw new Error(`stats-bridge returned ${response.status}`);
   return response.json();
@@ -41,6 +52,7 @@ const previewPath = `/live/${settings.feedId}`;
 const previewPublicPath = `/preview${previewPath}`;
 
 async function previewStatus() {
+  if (multiIngest) return multiIngest.snapshots.status(settings.feedId);
   try {
     const response = await fetch(`${settings.previewUpstreamUrl}${previewPath}/index.m3u8`, {
       headers: { accept: "application/vnd.apple.mpegurl" },
@@ -117,6 +129,7 @@ async function control(request, response, pathname) {
     if (pathname === "/api/v1/control/scene") {
       const { scene } = await readJson(request);
       if (!allowedScenes.has(scene)) return json(response, 400, { error: "scene must be Live, Low Bitrate, or BRB" });
+      if (multiIngest) multiIngest.controller.paused = true;
       await obsClient.setScene(scene);
     } else if (pathname === "/api/v1/control/ingest/mute" || pathname === "/api/v1/control/ingest/unmute") {
       const body = await readJson(request);
@@ -184,9 +197,10 @@ export async function dashboardStatus() {
 
 export async function handleRequest(request, response) {
     const url = new URL(request.url ?? "/", "http://localhost");
+    if (multiIngest && await multiIngest.request(request, response, url, authorized)) return;
     if (request.method === "GET" && url.pathname === "/healthz") return json(response, 200, { status: "ok" });
     if (request.method === "GET" && url.pathname === "/api/v1/dashboard/status") return json(response, 200, await dashboardStatus());
-    if (request.method === "GET" && url.pathname.startsWith(`${previewPublicPath}/`)) return proxyPreview(request, response, url.pathname, url.search);
+    if (!multiIngest && request.method === "GET" && url.pathname.startsWith(`${previewPublicPath}/`)) return proxyPreview(request, response, url.pathname, url.search);
     if (request.method === "POST" && url.pathname.startsWith("/api/v1/control/")) return control(request, response, url.pathname);
     if (url.pathname.startsWith("/api/") || request.method !== "GET") return json(response, 404, { error: "not found" });
 
@@ -206,6 +220,7 @@ export function createServer() {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  if (process.env.OPENIRL_MULTI_INGEST === "true") multiIngest = await MultiIngest.start(obsClient);
   obsClient.connect();
   createServer().listen(settings.port, settings.bindHost, () => console.log(`OpenIRL dashboard listening on ${settings.bindHost}:${settings.port}`));
 }
