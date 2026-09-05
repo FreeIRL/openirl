@@ -8,7 +8,8 @@ services:
     environment:
       MTX_AUTHMETHOD: http
       MTX_AUTHHTTPADDRESS: http://127.0.0.1:8081/auth
-      MTX_AUTHHTTPEXCLUDE: '[{"action":"api"},{"action":"metrics"}]'
+      MTX_AUTHHTTPEXCLUDE_0_ACTION: api
+      MTX_AUTHHTTPEXCLUDE_1_ACTION: metrics
       MTX_APIADDRESS: 127.0.0.1:9997
       MTX_METRICSADDRESS: 127.0.0.1:9998
       MTX_RTMPADDRESS: ${OPENIRL_RTMP_BIND:-127.0.0.1:1935}
@@ -43,6 +44,7 @@ services:
       FEED_1_PASSWORD_HASH: ${FEED_1_PASSWORD_HASH:?Preserve the existing feed hash}
       OPENIRL_INGEST_HOST: ${OPENIRL_INGEST_HOST:?Set your DNS-only ingest hostname}
       OPENIRL_AUTOMATION_OWNER: ${OPENIRL_AUTOMATION_OWNER:-noalbs}
+      OPENIRL_SNAPSHOT_SOURCE: ${OPENIRL_SNAPSHOT_SOURCE:-srt://127.0.0.1:8890?streamid=read:}
     volumes:
       - multi-ingest-data:/data
 volumes:
