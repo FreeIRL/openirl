@@ -30,7 +30,7 @@ sudo ufw status verbose
 
 Open a second SSH session before closing the first. The router should have one UDP port forward: external port 5000 to port 5000 at the mini PC's DHCP-reserved LAN address. Do not forward TCP 22 to the public Internet merely because it is allowed on the host firewall; restrict SSH at the router or access it over a VPN.
 
-Do **not** forward ports 1935, 8890, 4455, 8080, 9090, 9997, or 9998. Compose binds dashboard port 8080 and stats port 9090 to loopback.
+Do **not** forward ports 1935, 8890, 4455, 8080, 8888, 9090, 9997, or 9998. Compose binds dashboard port 8080, HLS playback port 8888, and stats port 9090 to loopback. The browser receives only the `live/feed-1` HLS assets through the dashboard's same-origin preview proxy; MediaMTX control and ingest endpoints are not proxied.
 
 On the single-host Ubuntu deployment, the dashboard container uses host networking solely to connect to OBS at `127.0.0.1:4455`; its HTTP listener is explicitly bound to `127.0.0.1:8080`. Do not change either bind address to `0.0.0.0`. Remote operator access should continue through the documented SSH tunnel or a private authenticated proxy/VPN.
 

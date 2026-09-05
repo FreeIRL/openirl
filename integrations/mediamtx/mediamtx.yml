@@ -28,6 +28,15 @@ rtmpAddress: :1935
 srt: yes
 srtAddress: :8890
 
+# Low-latency HLS remuxes the source without transcoding. Compose publishes this
+# listener on host loopback only; the dashboard proxies only live/feed-1.
+hls: yes
+hlsAddress: :8888
+hlsVariant: lowLatency
+hlsSegmentCount: 7
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+
 paths:
   live/feed-1:
   live/feed-2:

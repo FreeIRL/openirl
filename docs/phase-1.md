@@ -10,7 +10,7 @@ From the repository root:
 docker compose -f docker/compose.yaml up --build
 ```
 
-The public contribution listeners are SRT on UDP 8890 and RTMP on TCP 1935. The MediaMTX API and metrics ports are container-internal; normalized health is available locally on port 9090.
+The public contribution listeners are SRT on UDP 8890 and RTMP on TCP 1935. The MediaMTX API and metrics ports are container-internal; normalized health is available locally on port 9090. MediaMTX HLS playback uses TCP 8888 but Compose binds it to `127.0.0.1` only.
 
 ## 2. Publish a test feed
 
@@ -92,7 +92,27 @@ From an SSH client, create a temporary private tunnel:
 ssh -L 8080:127.0.0.1:8080 YOUR_USER@MINI_PC_LAN_IP
 ```
 
-Then open `http://127.0.0.1:8080` on that client. This requires no new firewall rule. For routine remote/mobile access, place the loopback-only dashboard behind an authenticated HTTPS reverse proxy or private VPN. The first dashboard release is intentionally read-only: its scene and end-stream buttons are disabled rather than pretending to control OBS.
+Then open `http://127.0.0.1:8080` on that client. This requires no new firewall rule. For routine remote/mobile access, place the loopback-only dashboard behind an authenticated HTTPS reverse proxy or private VPN. Scene and stream mutations require the independent `OPENIRL_CONTROL_TOKEN`; the preview and read-only status do not weaken that boundary.
+
+The Ingest Preview card automatically starts muted playback when `live/feed-1` is available. Its status comes from the real MediaMTX HLS playlist: offline feeds show an offline/reconnecting state instead of a placeholder video. Chrome and Firefox use the bundled HLS.js player; Safari uses native HLS. The browser talks only to the dashboard on port 8080, which proxies the narrow `/preview/live/feed-1/` namespace.
+
+For reliable browser playback, Feed 1 must contain:
+
+- H.264/AVC video (8-bit 4:2:0 is the safest browser profile);
+- AAC-LC audio; and
+- keyframes every one to two seconds for reasonable HLS startup and latency.
+
+MediaMTX remuxes those tracks into low-latency HLS and does not transcode them. If the sender uses H.265/HEVC, Opus, or another browser-dependent codec, ingest and OBS playback can still work while the dashboard preview fails. Change the encoder at the IRL sender/relay; do not add a software transcode on an N5095 host unless there is no compatible source option.
+
+Validate the private preview endpoints on the mini PC:
+
+```sh
+curl -s http://127.0.0.1:8080/api/v1/dashboard/status | jq '.preview'
+curl -I http://127.0.0.1:8888/live/feed-1/index.m3u8
+curl -I http://127.0.0.1:8080/preview/live/feed-1/index.m3u8
+```
+
+With Feed 1 live, both playlist requests should return success and `.preview.available` should be `true`. With the publisher stopped, `.preview.available` becomes `false`. Port 8888 is a host-local diagnostic endpoint only and must not be forwarded or opened in UFW.
 
 ## Optional SRTLA ingest (initial milestone)
 

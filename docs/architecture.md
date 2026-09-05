@@ -13,7 +13,7 @@
 
 The `stats-bridge`, dashboard, and narrow OBS adapter are implemented. The remaining boundaries describe the intended ownership model.
 
-- **Dashboard:** operator-facing state and a loopback-only backend that owns OBS credentials, validates a fixed command allowlist, and requires a control token for mutations.
+- **Dashboard:** operator-facing state and a loopback-only backend that owns OBS credentials, validates a fixed command allowlist, requires a control token for mutations, and proxies only Feed 1's MediaMTX HLS playback files.
 - **API:** validates commands, publishes state, and coordinates adapters.
 - **Ingest manager:** owns the three logical feed slots and transport lifecycle.
 - **Stats bridge:** converts MediaMTX, SRTLA, OBS, and NOALBS telemetry into one health model.

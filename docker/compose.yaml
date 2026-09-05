@@ -7,6 +7,8 @@ services:
     ports:
       - "1935:1935"
       - "8890:8890/udp"
+      # HLS playback is private to the host and proxied narrowly by dashboard.
+      - "127.0.0.1:8888:8888"
     expose:
       - "9997"
       - "9998"
@@ -57,7 +59,8 @@ services:
 
   dashboard:
     build:
-      context: ../apps/dashboard
+      context: ..
+      dockerfile: apps/dashboard/Dockerfile
     restart: unless-stopped
     environment:
       PORT: 8080
@@ -67,6 +70,7 @@ services:
       OBS_WEBSOCKET_URL: ws://127.0.0.1:4455
       OBS_WEBSOCKET_PASSWORD: ${OBS_WEBSOCKET_PASSWORD:-}
       OPENIRL_CONTROL_TOKEN: ${OPENIRL_CONTROL_TOKEN:-}
+      PREVIEW_UPSTREAM_URL: ${PREVIEW_UPSTREAM_URL:-http://127.0.0.1:8888}
     depends_on:
       - stats-bridge
     # Linux host networking lets the backend reach loopback-only OBS. The

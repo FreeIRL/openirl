@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { timingSafeEqual } from "node:crypto";
+import { Readable } from "node:stream";
 import { ObsClient } from "./obs-client.js";
 
 export const settings = {
@@ -13,6 +14,7 @@ export const settings = {
   controlToken: process.env.OPENIRL_CONTROL_TOKEN ?? "",
   obsUrl: process.env.OBS_WEBSOCKET_URL ?? "ws://127.0.0.1:4455",
   obsPassword: process.env.OBS_WEBSOCKET_PASSWORD ?? "",
+  previewUpstreamUrl: process.env.PREVIEW_UPSTREAM_URL ?? "http://127.0.0.1:8888",
 };
 
 export const allowedScenes = new Set(["Live", "Low Bitrate", "BRB"]);
@@ -30,6 +32,46 @@ async function upstream(path) {
   const response = await fetch(`${settings.statsBridgeUrl}${path}`, { signal: AbortSignal.timeout(2500) });
   if (!response.ok) throw new Error(`stats-bridge returned ${response.status}`);
   return response.json();
+}
+
+const previewPath = `/live/${settings.feedId}`;
+const previewPublicPath = `/preview${previewPath}`;
+
+async function previewStatus() {
+  try {
+    const response = await fetch(`${settings.previewUpstreamUrl}${previewPath}/index.m3u8`, {
+      headers: { accept: "application/vnd.apple.mpegurl" },
+      signal: AbortSignal.timeout(2000),
+    });
+    await response.body?.cancel();
+    if (!response.ok) return { available: false, state: "offline", url: null, format: "hls", note: "Feed 1 HLS playlist is not ready" };
+    return { available: true, state: "available", url: `${previewPublicPath}/index.m3u8`, format: "hls", note: "Live HLS preview (H.264/AAC)" };
+  } catch (error) {
+    return { available: false, state: "offline", url: null, format: "hls", note: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+async function proxyPreview(request, response, pathname, search) {
+  const suffix = pathname.slice(`${previewPublicPath}/`.length);
+  if (!suffix || !/^[A-Za-z0-9._/-]+$/.test(suffix) || suffix.split("/").includes("..")) {
+    return json(response, 404, { error: "preview asset not found" });
+  }
+  try {
+    const upstreamResponse = await fetch(`${settings.previewUpstreamUrl}${previewPath}/${suffix}${search}`, {
+      headers: { accept: request.headers?.accept ?? "*/*" },
+      signal: AbortSignal.timeout(10000),
+    });
+    const headers = {
+      "content-type": upstreamResponse.headers.get("content-type") ?? "application/octet-stream",
+      "cache-control": suffix.endsWith(".m3u8") ? "no-store" : "private, max-age=5",
+      "x-content-type-options": "nosniff",
+    };
+    response.writeHead(upstreamResponse.status, headers);
+    if (!upstreamResponse.body) return response.end();
+    Readable.fromWeb(upstreamResponse.body).pipe(response);
+  } catch {
+    return json(response, 502, { error: "preview source unavailable" });
+  }
 }
 
 function authorized(request) {
@@ -66,6 +108,7 @@ async function control(request, response, pathname) {
 export async function dashboardStatus() {
   const checkedAt = Date.now();
   const obs = obsClient.snapshot();
+  const preview = await previewStatus();
   try {
     const [feed, health] = await Promise.all([
       upstream(`/api/v1/feeds/${encodeURIComponent(settings.feedId)}`),
@@ -82,7 +125,8 @@ export async function dashboardStatus() {
         srtla: { state: "unknown", source: "unavailable", note: "Per-link SRTLA telemetry is not implemented" },
       },
       controls: { enabled: obs.connected && Boolean(settings.controlToken), reason: !settings.controlToken ? "Set OPENIRL_CONTROL_TOKEN to enable controls" : obs.connected ? "Enter the control token to operate OBS" : "OBS is disconnected" },
-      program: { scene: obs.scene, state: obs.connected ? (obs.streaming ? "Live" : "Stopped") : null, streaming: obs.streaming, previewUrl: null },
+      program: { scene: obs.scene, state: obs.connected ? (obs.streaming ? "Live" : "Stopped") : null, streaming: obs.streaming },
+      preview,
       links: null,
     };
   } catch (error) {
@@ -97,7 +141,8 @@ export async function dashboardStatus() {
         srtla: { state: "unknown", source: "unavailable", note: "Per-link SRTLA telemetry is not implemented" },
       },
       controls: { enabled: obs.connected && Boolean(settings.controlToken), reason: !settings.controlToken ? "Set OPENIRL_CONTROL_TOKEN to enable controls" : obs.connected ? "Enter the control token to operate OBS" : "OBS is disconnected" },
-      program: { scene: obs.scene, state: obs.connected ? (obs.streaming ? "Live" : "Stopped") : null, streaming: obs.streaming, previewUrl: null },
+      program: { scene: obs.scene, state: obs.connected ? (obs.streaming ? "Live" : "Stopped") : null, streaming: obs.streaming },
+      preview,
       links: null,
     };
   }
@@ -107,6 +152,7 @@ export async function handleRequest(request, response) {
     const url = new URL(request.url ?? "/", "http://localhost");
     if (request.method === "GET" && url.pathname === "/healthz") return json(response, 200, { status: "ok" });
     if (request.method === "GET" && url.pathname === "/api/v1/dashboard/status") return json(response, 200, await dashboardStatus());
+    if (request.method === "GET" && url.pathname.startsWith(`${previewPublicPath}/`)) return proxyPreview(request, response, url.pathname, url.search);
     if (request.method === "POST" && url.pathname.startsWith("/api/v1/control/")) return control(request, response, url.pathname);
     if (url.pathname.startsWith("/api/") || request.method !== "GET") return json(response, 404, { error: "not found" });
 

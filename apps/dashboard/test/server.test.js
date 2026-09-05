@@ -14,9 +14,11 @@ async function request(url, { method="GET", headers:requestHeaders={}, body:requ
 test("serves the accessible dashboard and status contract", async () => {
   const page=(await request("/")).body;
   assert.match(page,/Skip to controls/); assert.match(page,/Per-link SRTLA telemetry/); assert.match(page,/button[^>]+disabled/);
-  assert.match(page,/Ingest Preview/); assert.match(page,/Bitrate/); assert.match(page,/Offline \/ BRB/);
+  assert.match(page,/Ingest Preview/); assert.match(page,/<video[^>]+muted[^>]+autoplay[^>]+playsinline/); assert.match(page,/vendor\/hls\.min\.js/);
+  assert.match(page,/Bitrate/); assert.match(page,/Offline \/ BRB/);
   const status=(await request("/api/v1/dashboard/status")).json();
   assert.equal(status.controls.enabled,false); assert.equal(status.services.srtla.source,"unavailable"); assert.equal(status.links,null);
+  assert.equal(status.preview.available,false); assert.equal(status.preview.url,null); assert.equal(status.preview.format,"hls");
 });
 
 test("control API requires a token and rejects scenes outside the allowlist", async () => {
@@ -32,4 +34,9 @@ test("control API requires a token and rejects scenes outside the allowlist", as
 test("does not allow path traversal", async () => {
   const response=await request("/..%2f..%2fpackage.json");
   assert.equal(response.statusCode,404);
+});
+
+test("preview proxy is limited to the configured Feed 1 asset namespace", async () => {
+  assert.equal((await request("/preview/live/feed-1/%2e%2e/secret")).statusCode,404);
+  assert.equal((await request("/preview/live/feed-2/index.m3u8")).statusCode,404);
 });

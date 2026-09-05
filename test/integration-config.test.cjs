@@ -54,11 +54,20 @@ test("dashboard remains loopback-only while reaching local OBS", async () => {
   assert.match(compose, /OBS_WEBSOCKET_URL: ws:\/\/127\.0\.0\.1:4455/);
   assert.match(compose, /network_mode: host/);
   assert.doesNotMatch(compose, /4455:4455/);
+  assert.match(compose, /127\.0\.0\.1:8888:8888/);
+  assert.match(compose, /PREVIEW_UPSTREAM_URL: \$\{PREVIEW_UPSTREAM_URL:-http:\/\/127\.0\.0\.1:8888\}/);
+});
+
+test("MediaMTX provides low-latency HLS without exposing its control plane", async () => {
+  const config = await read("integrations/mediamtx/mediamtx.yml");
+  assert.match(config, /hlsVariant: lowLatency/);
+  assert.match(config, /hlsSegmentDuration: 1s/);
+  assert.match(config, /hlsPartDuration: 200ms/);
 });
 
 test("security guide exposes only SRTLA and contains no deployed secret", async () => {
   const guide = await read("docs/security.md");
   assert.match(guide, /ufw allow 5000\/udp/);
-  assert.match(guide, /Do \*\*not\*\* forward ports 1935, 8890, 4455, 8080, 9090, 9997, or 9998/);
+  assert.match(guide, /Do \*\*not\*\* forward ports 1935, 8890, 4455, 8080, 8888, 9090, 9997, or 9998/);
   assert.match(guide, /YOUR_SECRET/);
 });

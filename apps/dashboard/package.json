@@ -6,5 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "check": "node --check src/server.js && node --check src/obs-client.js && node --check public/app.js && node --test"
+  },
+  "dependencies": {
+    "hls.js": "^1.6.13"
   }
 }
